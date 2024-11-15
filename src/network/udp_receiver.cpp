@@ -8,13 +8,17 @@ UDPReceiver::UDPReceiver(const std::string& ip, int port)
     , socket_(INVALID_SOCKET)
     , is_initialized_(false)
 {
+    if (!Init()) {
+        std::cerr << "Failed to initialize UDP receiver" << std::endl;
+        throw std::runtime_error("Failed to initialize UDP receiver");
+    }
 }
 
 UDPReceiver::~UDPReceiver() {
-    close();
+    Close();
 }
 
-bool UDPReceiver::init() {
+bool UDPReceiver::Init() {
 #ifdef _WIN32
     // Windows socket initialization
     if (WSAStartup(MAKEWORD(2, 2), &wsa_data_) != 0) {
@@ -37,17 +41,16 @@ bool UDPReceiver::init() {
     std::memset(&server_addr_, 0, sizeof(server_addr_));
     server_addr_.sin_family = AF_INET;
     server_addr_.sin_port = htons(port_);
-
-#ifdef _WIN32
-    inet_pton(AF_INET, ip_.c_str(), &server_addr_.sin_addr);
-#else
-    server_addr_.sin_addr.s_addr = inet_addr(ip_.c_str());
-#endif
+    server_addr_.sin_addr.s_addr = INADDR_ANY;
 
     // Bind socket
     if (bind(socket_, (SOCKADDR*)&server_addr_, sizeof(server_addr_)) == SOCKET_ERROR) {
-        std::cerr << "Bind failed" << std::endl;
-        close();
+#ifdef _WIN32
+        std::cerr << "Bind failed with error: " << WSAGetLastError() << std::endl;
+#else
+        std::cerr << "Bind failed with error: " << strerror(errno) << std::endl;
+#endif
+        Close();
         return false;
     }
 
@@ -55,7 +58,7 @@ bool UDPReceiver::init() {
     return true;
 }
 
-bool UDPReceiver::receive(char* buffer, size_t buffer_size, size_t& received_size) {
+bool UDPReceiver::Receive(char* buffer, size_t buffer_size, size_t& received_size) {
     if (!is_initialized_) {
         std::cerr << "Socket not initialized" << std::endl;
         return false;
@@ -81,7 +84,7 @@ bool UDPReceiver::receive(char* buffer, size_t buffer_size, size_t& received_siz
     return true;
 }
 
-void UDPReceiver::close() {
+void UDPReceiver::Close() {
     if (socket_ != INVALID_SOCKET) {
         CLOSE_SOCKET(socket_);
         socket_ = INVALID_SOCKET;
@@ -94,4 +97,8 @@ void UDPReceiver::close() {
 #endif
 
     is_initialized_ = false;
+}
+
+bool UDPReceiver::IsConnected() {
+    return is_initialized_;
 }

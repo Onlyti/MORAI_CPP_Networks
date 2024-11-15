@@ -37,12 +37,14 @@
 
 class UDPReceiver {
 public:
+    UDPReceiver() = delete; // Prevent default constructor
     UDPReceiver(const std::string& ip, int port);
     ~UDPReceiver();
     
-    bool init();
-    bool receive(char* buffer, size_t buffer_size, size_t& received_size);
-    void close();
+    bool Init();
+    bool Receive(char* buffer, size_t buffer_size, size_t& received_size);
+    void Close();
+    bool IsConnected();
 
 private:
     std::string ip_;
@@ -56,4 +58,4 @@ private:
 #endif
 };
 
-#endif
+#endif // __UDP_RECEIVER_HPP__

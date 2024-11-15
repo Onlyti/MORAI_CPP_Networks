@@ -13,8 +13,32 @@ else()
     set(PLATFORM_LIBS pthread)
 endif()
 
+
+
+# For Windows vcpkg users
+if(WIN32)
+    set(CMAKE_TOOLCHAIN_FILE "${CMAKE_CURRENT_SOURCE_DIR}/vcpkg/scripts/buildsystems/vcpkg.cmake"
+        CACHE STRING "Vcpkg toolchain file")
+    
+    # Fix OpenCV_DIR path
+    set(vcpkg_DIR "C:/Users/User/Documents/git/vcpkg")
+    if(DEFINED vcpkg_DIR)
+        set(OpenCV_DIR "${vcpkg_DIR}/installed/x64-windows/share/opencv4")
+    else()
+        message(FATAL_ERROR "vcpkg_DIR is not defined. Please make sure vcpkg is properly installed and integrated.")
+    endif()
+    set(Protobuf_DIR "${vcpkg_DIR}/installed/x64-windows/share/protobuf")
+    set(Boost_DIR "${vcpkg_DIR}/installed/x64-windows/share/boost")
+    set(quirc_DIR "${vcpkg_DIR}/installed/x64-windows/share/quirc")
+    set(libjpeg_turbo_DIR "${vcpkg_DIR}/installed/x64-windows/share/libjpeg-turbo")
+    set(libpng_DIR "${vcpkg_DIR}/installed/x64-windows/share/libpng")
+    set(libtiff_DIR "${vcpkg_DIR}/installed/x64-windows/share/libtiff")
+    set(libwebp_DIR "${vcpkg_DIR}/installed/x64-windows/share/libwebp")
+    set(OpenEXR_DIR "${vcpkg_DIR}/installed/x64-windows/share/openexr")
+
+endif()
 # Find OpenCV package (for image examples)
-# find_package(OpenCV REQUIRED)
+find_package(OpenCV REQUIRED)
 
 # Include directories
 include_directories(
@@ -39,18 +63,21 @@ add_executable(basic_sender
     ${NETWORK_SOURCES}
 )
 
+add_executable(camera_receiver
+    examples/camera_receiver_example.cpp
+    src/sensors/camera.cpp
+    ${NETWORK_SOURCES}
+)
+
 # Link libraries
 target_link_libraries(basic_receiver PRIVATE ${PLATFORM_LIBS})
 target_link_libraries(basic_sender PRIVATE ${PLATFORM_LIBS})
-
-target_link_libraries(image_sender PRIVATE 
-    ${PLATFORM_LIBS}
+target_link_libraries(camera_receiver PRIVATE 
+    ${PLATFORM_LIBS} 
     ${OpenCV_LIBS}
-)
-
-target_link_libraries(image_receiver PRIVATE 
-    ${PLATFORM_LIBS}
-    ${OpenCV_LIBS}
+    opencv_core
+    opencv_highgui
+    opencv_imgcodecs
 )
 
 # For Windows vcpkg users
@@ -79,7 +106,5 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 install(TARGETS 
     basic_receiver 
     basic_sender 
-    image_receiver 
-    image_sender
     RUNTIME DESTINATION bin
 )
