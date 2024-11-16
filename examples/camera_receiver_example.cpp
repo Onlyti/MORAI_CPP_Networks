@@ -71,7 +71,7 @@ int main(int argc, char** argv)
             else
             {
                 std::cout << "No image data" << std::endl;
-                std::cout << "Camera size: " << camera_data.image_data.size() << std::endl;
+                // std::cout << "Camera size: " << camera_data.image_data.size() << std::endl;
             }
         }
     }

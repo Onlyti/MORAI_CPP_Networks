@@ -1,0 +1,142 @@
+#ifndef __IMU_HPP__
+#define __IMU_HPP__
+
+#include <float.h>
+
+#include <atomic>
+#include <memory>
+#include <mutex>
+#include <string>
+#include <thread>
+#include <vector>
+
+#include "../network/udp_receiver.hpp"
+
+/**
+ * @brief MORAI 시뮬레이터의 IMU 데이터를 수신하고 처리하는 클래스
+ * @details UDP를 통해 IMU 센서의 자세, 각속도, 선가속도 데이터를 수신하고 처리합니다
+ */
+class IMU : public UDPReceiver
+{
+    const static size_t MAX_PACKET_SIZE = 1024;
+
+ public:
+    // IMU Data Types
+    struct IMUPacketHeader  // (25byte)
+    {
+#pragma pack(push, 1)
+        // Header (9byte) - "#IMUData$"
+        uint8_t header[9];
+
+        // Size (4byte)
+        int32_t size;
+
+        // Aux Data (12byte)
+        uint8_t aux_data[12 + 8];  // Manual says 12, but it's 20
+#pragma pack(pop)
+    };
+
+    /**
+     * @brief IMU 센서 데이터를 저장하는 구조체
+     */
+    struct IMUData  // (80byte)
+    {
+        // Orientation (Quaternion)
+        double w;
+        double x;
+        double y;
+        double z;
+
+        // Angular Velocity (rad/s)
+        double angular_velocity_x;
+        double angular_velocity_y;
+        double angular_velocity_z;
+
+        // Linear Acceleration (m/s²)
+        double linear_acceleration_x;
+        double linear_acceleration_y;
+        double linear_acceleration_z;
+    };
+
+    union IMUPacketStruct
+    {
+        // Initialize data to 0
+        uint8_t data[MAX_PACKET_SIZE] = {0};
+        struct
+        {
+#pragma pack(push, 1)
+            // Header (25byte)
+            IMUPacketHeader header;
+
+            // IMU Data Block (80byte)
+            struct
+            {
+                double orientation[4];          // Quaternion (32byte)
+                double angular_velocity[3];     // rad/s (24byte)
+                double linear_acceleration[3];  // m/s² (24byte)
+            } imu_data;
+
+            // Tail (2byte) - Fixed value 0x0D, 0x0A
+            uint8_t tail[2];
+#pragma pack(pop)
+        } packet;
+    };
+
+    IMU() = delete;  // Prevent default constructor
+    /**
+     * @brief IMU 클래스의 생성자
+     * @param ip_address UDP 수신을 위한 IP 주소
+     * @param port UDP 수신을 위한 포트 번호
+     * @note 생성자에서 UDP 수신 스레드가 시작됩니다
+     */
+    IMU(const std::string& ip_address, uint16_t port);
+
+    /**
+     * @brief IMU 클래스의 소멸자
+     * @note UDP 수신 스레드를 안전하게 종료합니다
+     */
+    ~IMU();
+
+    /**
+     * @brief IMU 데이터를 가져옵니다
+     * @param[out] data IMU 데이터를 저장할 구조체
+     * @return 데이터 수신 성공 여부
+     * @note 이 함수는 새로운 데이터가 수신될 때까지 이전 데이터를 반환하지 않습니다
+     */
+    bool GetIMUData(IMUData& data);
+
+    /**
+     * @brief 가장 최근의 IMU 데이터를 가져옵니다
+     * @param[out] data IMU 데이터를 저장할 구조체
+     * @return 데이터 존재 여부
+     * @note GetIMUData와 달리 항상 최신 데이터를 반환합니다
+     */
+    bool GetLatestIMUData(IMUData& data);
+
+ private:
+    /**
+     * @brief UDP 수신 스레드 함수
+     * @note 이 함수는 별도의 스레드에서 실행되며, IMU 데이터를 지속적으로 수신합니다
+     */
+    void ThreadIMUUdpReceiver();
+
+    /**
+     * @brief IMU 데이터를 파싱합니다
+     * @param buffer 수신된 원본 데이터 버퍼
+     * @param size 버퍼의 크기
+     * @param[out] data 파싱된 IMU 데이터를 저장할 구조체
+     * @return 파싱 성공 여부
+     */
+    bool ParseIMUData(const char* buffer, size_t size, IMUData& data);
+
+    // UDP Receiver
+    std::thread thread_imu_udp_receiver_;
+    std::atomic<bool> is_running_;
+
+    // IMU Data
+    std::mutex mutex_imu_data_;
+    IMUData imu_data_;
+    bool is_imu_data_received_;
+};
+
+#endif  // __IMU_HPP__

@@ -13,8 +13,6 @@ else()
     set(PLATFORM_LIBS pthread)
 endif()
 
-
-
 # For Windows vcpkg users
 if(WIN32)
     set(CMAKE_TOOLCHAIN_FILE "${CMAKE_CURRENT_SOURCE_DIR}/vcpkg/scripts/buildsystems/vcpkg.cmake"
@@ -52,6 +50,11 @@ set(NETWORK_SOURCES
     src/network/udp_sender.cpp
 )
 
+set(SENSOR_SOURCES
+    src/sensors/camera.cpp
+    src/sensors/imu.cpp
+)
+
 # Create executables - Basic examples
 add_executable(basic_receiver 
     examples/udp_receiver_example.cpp
@@ -63,28 +66,32 @@ add_executable(basic_sender
     ${NETWORK_SOURCES}
 )
 
+# Create executables - Sensor examples
 add_executable(camera_receiver
     examples/camera_receiver_example.cpp
-    src/sensors/camera.cpp
     ${NETWORK_SOURCES}
+    ${SENSOR_SOURCES}
 )
 
-# Link libraries
+add_executable(imu_receiver
+    examples/imu_receiver_example.cpp
+    ${NETWORK_SOURCES}
+    ${SENSOR_SOURCES}
+)
+
+# Link libraries - Basic examples
 target_link_libraries(basic_receiver PRIVATE ${PLATFORM_LIBS})
 target_link_libraries(basic_sender PRIVATE ${PLATFORM_LIBS})
+
+# Link libraries - Sensor examples
 target_link_libraries(camera_receiver PRIVATE 
     ${PLATFORM_LIBS} 
     ${OpenCV_LIBS}
-    opencv_core
-    opencv_highgui
-    opencv_imgcodecs
 )
 
-# For Windows vcpkg users
-if(WIN32)
-    set(CMAKE_TOOLCHAIN_FILE "${CMAKE_CURRENT_SOURCE_DIR}/vcpkg/scripts/buildsystems/vcpkg.cmake"
-        CACHE STRING "Vcpkg toolchain file")
-endif()
+target_link_libraries(imu_receiver PRIVATE 
+    ${PLATFORM_LIBS}
+)
 
 # Debug/Release configuration
 if(MSVC)
@@ -105,6 +112,8 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 # Installation settings
 install(TARGETS 
     basic_receiver 
-    basic_sender 
+    basic_sender
+    camera_receiver
+    imu_receiver
     RUNTIME DESTINATION bin
 )
