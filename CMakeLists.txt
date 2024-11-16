@@ -53,6 +53,7 @@ set(NETWORK_SOURCES
 set(SENSOR_SOURCES
     src/sensors/camera.cpp
     src/sensors/imu.cpp
+    src/sensors/gps.cpp
 )
 
 # Create executables - Basic examples
@@ -79,6 +80,13 @@ add_executable(imu_receiver
     ${SENSOR_SOURCES}
 )
 
+# Create executables - GPS example
+add_executable(gps_receiver
+    examples/gps_receiver_example.cpp
+    ${NETWORK_SOURCES}
+    ${SENSOR_SOURCES}
+)
+
 # Link libraries - Basic examples
 target_link_libraries(basic_receiver PRIVATE ${PLATFORM_LIBS})
 target_link_libraries(basic_sender PRIVATE ${PLATFORM_LIBS})
@@ -90,6 +98,11 @@ target_link_libraries(camera_receiver PRIVATE
 )
 
 target_link_libraries(imu_receiver PRIVATE 
+    ${PLATFORM_LIBS}
+)
+
+# Link libraries - GPS example
+target_link_libraries(gps_receiver PRIVATE 
     ${PLATFORM_LIBS}
 )
 
@@ -115,5 +128,6 @@ install(TARGETS
     basic_sender
     camera_receiver
     imu_receiver
+    gps_receiver
     RUNTIME DESTINATION bin
 )
