@@ -8,6 +8,8 @@ Camera::Camera(const std::string& ip_address, uint16_t port)
     is_running_ = true;
     is_camera_data_received_ = false;
     is_bbox_data_received_ = false;
+    max_camera_data_queue_size_ = 10;
+    max_bbox_data_queue_size_ = 10;
     thread_camera_udp_receiver_ = std::thread(&Camera::ThreadCameraUdpReceiver, this);
 }
 
@@ -19,6 +21,126 @@ Camera::~Camera()
         thread_camera_udp_receiver_.join();
     }
     Close();
+}
+
+bool Camera::GetCameraData(CameraData& data)
+{
+    if (!is_camera_data_received_)
+    {
+        return false;
+    }
+    is_camera_data_received_ = false;
+    return GetLatestCameraData(data);
+}
+
+bool Camera::GetBoundingBoxData(BoundingBoxData& data)
+{
+    if (!is_bbox_data_received_)
+    {
+        return false;
+    }
+    is_bbox_data_received_ = false;
+    return GetLatestBoundingBoxData(data);
+}
+
+bool Camera::GetSyncData(CameraData& camera_data, BoundingBoxData& bbox_data)
+{
+    GetLatestCameraData(camera_data);
+    int camera_timestamp_ns = static_cast<int>(camera_data.timestamp * 1e9);
+
+    GetLatestBoundingBoxData(bbox_data);
+    int bbox_timestamp_ns = static_cast<int>(bbox_data.timestamp * 1e9);
+
+    if (std::abs(camera_timestamp_ns - bbox_timestamp_ns) >
+        static_cast<int>(MAX_SYNC_DATA_TIME_MS * 1e6))
+    {
+        return false;
+    }
+    return true;
+}
+
+bool Camera::GetBoundingBoxedImage(cv::Mat& image)
+{
+    if (!is_bbox_data_received_)
+    {
+        return false;
+    }
+    is_bbox_data_received_ = false;
+    return GetLatestBoundingBoxedImage(image);
+}
+
+bool Camera::GetImage(cv::Mat& image)
+{
+    CameraData camera_data;
+    if (!GetCameraData(camera_data))
+    {
+        return false;
+    }
+    image = camera_data.image_data;
+    return true;
+}
+bool Camera::GetLatestCameraData(CameraData& data)
+{
+    std::lock_guard<std::mutex> lock(mutex_camera_data_);
+    data = camera_data_;
+    return !data.image_data.empty();
+}
+
+bool Camera::GetLatestBoundingBoxData(BoundingBoxData& data)
+{
+    std::lock_guard<std::mutex> lock(mutex_bbox_data_);
+    data = bbox_data_;
+    return !data.bbox_2d.empty();
+}
+
+bool Camera::GetLatestData(CameraData& camera_data, BoundingBoxData& bbox_data)
+{
+    return GetLatestCameraData(camera_data) && GetLatestBoundingBoxData(bbox_data);
+}
+
+bool Camera::GetLatestBoundingBoxedImage(cv::Mat& image)
+{
+    CameraData camera_data;
+    if (!GetLatestCameraData(camera_data))
+    {
+        return false;
+    }
+    // 바운딩 박스 데이터 가져오기
+    Camera::BoundingBoxData bbox_data;
+    if (!GetLatestBoundingBoxData(bbox_data))
+    {
+        return false;
+    }
+    // 이미지에 2D 바운딩 박스 그리기
+    for (size_t i = 0; i < bbox_data.bbox_2d.size(); i++)
+    {
+        const auto& bbox = bbox_data.bbox_2d[i];
+        const auto& cls = bbox_data.classes[i];
+
+        // 바운딩 박스 그리기
+        cv::rectangle(camera_data.image_data, cv::Point(bbox.x_min, bbox.y_min),
+                      cv::Point(bbox.x_max, bbox.y_max), cv::Scalar(0, 255, 0), 2);
+
+        // 클래스 정보 표시
+        std::string class_text = "Class: " + std::to_string(cls.group_id) + "," +
+                                 std::to_string(cls.class_id) + "," +
+                                 std::to_string(cls.sub_class_id);
+        cv::putText(camera_data.image_data, class_text, cv::Point(bbox.x_min, bbox.y_min - 10),
+                    cv::FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(0, 255, 0), 1);
+    }
+    image = camera_data.image_data;
+    return true;
+}
+
+bool Camera::GetLatestImage(cv::Mat& image)
+{
+    CameraData camera_data;
+    if (!GetLatestCameraData(camera_data))
+    {
+        return false;
+    }
+    image = camera_data.image_data;
+    return true;
 }
 
 void Camera::ThreadCameraUdpReceiver()
@@ -44,6 +166,10 @@ void Camera::ThreadCameraUdpReceiver()
             std::cerr << "Invalid header" << std::endl;
             continue;
         }
+        // std::cout << "Header: " << header_str << std::endl;
+        // std::cout << "Size: " << header.size << std::endl;
+        // std::cout << "Time: " << header.timestamp.sec << "." << std::setw(9) << std::setfill('0')
+        //           << header.timestamp.nsec << std::endl;
         if (header_str == "MOR")
         {
             CameraPacketStruct camera_packet;
@@ -59,57 +185,38 @@ void Camera::ThreadCameraUdpReceiver()
                     CameraData temp_data;
                     if (ParseCameraData(buffer, temp_data))
                     {
-                        temp_data.timestamp =
-                            static_cast<double>(camera_packet.image.header.timestamp.sec) +
-                            static_cast<double>(camera_packet.image.header.timestamp.nsec) * 1e-9;
+                        temp_data.timestamp = static_cast<double>(header.timestamp.sec) +
+                                              static_cast<double>(header.timestamp.nsec) * 1e-9;
                         std::lock_guard<std::mutex> lock(mutex_camera_data_);
                         camera_data_ = std::move(temp_data);
                         is_camera_data_received_ = true;
                     }
                     buffer.clear();
-                    std::cout << "Camera timestamp: " << camera_packet.image.header.timestamp.sec
-                              << "." << camera_packet.image.header.timestamp.nsec << std::endl;
+                    // // 소수점 이후는 9자리 고정
+                    // std::cout << "Camera timestamp: " << std::endl
+                    //           << header.timestamp.sec << "." << std::setw(9) << std::setfill('0')
+                    //           << header.timestamp.nsec << std::endl;
                 }
                 continue;
             }
         }
         else if (header_str == "BOX")
         {
-            BoundingBoxPacketStruct bbox_packet;
-            std::memcpy(&bbox_packet, packet_buffer, sizeof(BoundingBoxPacketStruct));
-
-            // Check if the packet is complete (has valid tail)
-            if (bbox_packet.boundingbox.tail[0] == 'E' && bbox_packet.boundingbox.tail[1] == 'I')
+            BoundingBoxData temp_data;
+            if (ParseBoundingBoxData(packet_buffer, received_size, temp_data))
             {
-                BoundingBoxData temp_data;
-                if (ParseBoundingBoxData(packet_buffer, received_size, temp_data))
-                {
-                    temp_data.timestamp =
-                        static_cast<double>(bbox_packet.boundingbox.header.timestamp.sec) +
-                        static_cast<double>(bbox_packet.boundingbox.header.timestamp.nsec) * 1e-9;
+                temp_data.timestamp = static_cast<double>(header.timestamp.sec) +
+                                      static_cast<double>(header.timestamp.nsec) * 1e-9;
 
-                    std::lock_guard<std::mutex> lock(mutex_bbox_data_);
-                    bbox_data_ = std::move(temp_data);
-                    is_bbox_data_received_ = true;
-                }
-                std::cout << "Bounding box timestamp: "
-                          << bbox_packet.boundingbox.header.timestamp.sec << "."
-                          << bbox_packet.boundingbox.header.timestamp.nsec << std::endl;
+                std::lock_guard<std::mutex> lock(mutex_bbox_data_);
+                bbox_data_ = std::move(temp_data);
+                is_bbox_data_received_ = true;
             }
+            // std::cout << "Bounding box timestamp: " << std::endl
+            //           << header.timestamp.sec << "." << std::setw(9) << std::setfill('0')
+            //           << header.timestamp.nsec << std::endl;
         }
     }
-}
-
-bool Camera::GetCameraData(CameraData& data)
-{
-    if (!is_camera_data_received_)
-    {
-        return false;
-    }
-    std::lock_guard<std::mutex> lock(mutex_camera_data_);
-    data = camera_data_;
-    is_camera_data_received_ = false;
-    return !data.image_data.empty();
 }
 
 bool Camera::ParseCameraData(const std::vector<uint8_t>& buffer, CameraData& data)
@@ -134,18 +241,6 @@ bool Camera::ParseCameraData(const std::vector<uint8_t>& buffer, CameraData& dat
     return true;
 }
 
-bool Camera::GetBoundingBoxData(BoundingBoxData& data)
-{
-    if (!is_bbox_data_received_)
-    {
-        return false;
-    }
-    std::lock_guard<std::mutex> lock(mutex_bbox_data_);
-    data = bbox_data_;
-    is_bbox_data_received_ = false;
-    return !data.bbox_2d.empty();
-}
-
 bool Camera::ParseBoundingBoxData(const char* buffer, size_t size, BoundingBoxData& data)
 {
     if (size < sizeof(BoundingBoxPacketStruct))
@@ -162,11 +257,11 @@ bool Camera::ParseBoundingBoxData(const char* buffer, size_t size, BoundingBoxDa
     data.classes.clear();
 
     // Calculate actual number of objects from packet size
-    size_t header_size = sizeof(CameraPacketHeader);
-    size_t tail_size = 2;  // EI
-    size_t object_size = sizeof(BoundingBoxPacketStruct::boundingbox.object_data[0]);
-    size_t data_size = size - header_size - tail_size;
-    size_t num_objects = data_size / object_size;
+    CameraPacketHeader header;
+    std::memcpy(&header, buffer, sizeof(CameraPacketHeader));
+    size_t payload_size = header.size;
+    size_t num_objects = payload_size / sizeof(BoundingBoxPacketStruct::boundingbox.object_data[0]);
+    size_t tail_index = sizeof(CameraPacketHeader) + payload_size;
 
     // Iterate only through valid objects
     for (size_t i = 0; i < num_objects; i++)
