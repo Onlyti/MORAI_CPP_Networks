@@ -54,6 +54,7 @@ set(SENSOR_SOURCES
     src/sensors/camera.cpp
     src/sensors/imu.cpp
     src/sensors/gps.cpp
+    src/sensors/vehicle_state.cpp
 )
 
 # Create executables - Basic examples
@@ -87,6 +88,12 @@ add_executable(gps_receiver
     ${SENSOR_SOURCES}
 )
 
+add_executable(vehicle_state_receiver
+    examples/vehicle_state_receiver_example.cpp
+    ${NETWORK_SOURCES}
+    ${SENSOR_SOURCES}
+)
+
 # Link libraries - Basic examples
 target_link_libraries(basic_receiver PRIVATE ${PLATFORM_LIBS})
 target_link_libraries(basic_sender PRIVATE ${PLATFORM_LIBS})
@@ -105,6 +112,11 @@ target_link_libraries(imu_receiver PRIVATE
 target_link_libraries(gps_receiver PRIVATE 
     ${PLATFORM_LIBS}
 )
+
+target_link_libraries(vehicle_state_receiver PRIVATE 
+    ${PLATFORM_LIBS}
+)
+
 
 # Debug/Release configuration
 if(MSVC)
@@ -129,5 +141,6 @@ install(TARGETS
     camera_receiver
     imu_receiver
     gps_receiver
+    vehicle_state_receiver
     RUNTIME DESTINATION bin
 )
