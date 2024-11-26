@@ -9,6 +9,7 @@ IMU::IMU(const std::string& ip_address, uint16_t port)
     is_running_ = true;
     is_imu_data_received_ = false;
     thread_imu_udp_receiver_ = std::thread(&IMU::ThreadIMUUdpReceiver, this);
+    thread_imu_udp_receiver_.detach();
 }
 
 IMU::~IMU()
@@ -28,7 +29,7 @@ bool IMU::GetIMUData(IMUData& data)
         return false;
     }
     is_imu_data_received_ = false;
-    return GetLatestIMUData(data);
+    return std::move(GetLatestIMUData(data));
 }
 
 bool IMU::GetLatestIMUData(IMUData& data)

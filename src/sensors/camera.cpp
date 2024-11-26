@@ -11,6 +11,7 @@ Camera::Camera(const std::string& ip_address, uint16_t port)
     max_camera_data_queue_size_ = 10;
     max_bbox_data_queue_size_ = 10;
     thread_camera_udp_receiver_ = std::thread(&Camera::ThreadCameraUdpReceiver, this);
+    thread_camera_udp_receiver_.detach();
 }
 
 Camera::~Camera()
@@ -30,7 +31,7 @@ bool Camera::GetCameraData(CameraData& data)
         return false;
     }
     is_camera_data_received_ = false;
-    return GetLatestCameraData(data);
+    return std::move(GetLatestCameraData(data));
 }
 
 bool Camera::GetBoundingBoxData(BoundingBoxData& data)
@@ -40,7 +41,7 @@ bool Camera::GetBoundingBoxData(BoundingBoxData& data)
         return false;
     }
     is_bbox_data_received_ = false;
-    return GetLatestBoundingBoxData(data);
+    return std::move(GetLatestBoundingBoxData(data));
 }
 
 bool Camera::GetSyncData(CameraData& camera_data, BoundingBoxData& bbox_data)
@@ -76,7 +77,7 @@ bool Camera::GetImage(cv::Mat& image)
     {
         return false;
     }
-    image = camera_data.image_data;
+    image = std::move(camera_data.image_data);
     return true;
 }
 bool Camera::GetLatestCameraData(CameraData& data)

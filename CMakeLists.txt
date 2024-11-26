@@ -33,10 +33,13 @@ if(WIN32)
     set(libtiff_DIR "${vcpkg_DIR}/installed/x64-windows/share/libtiff")
     set(libwebp_DIR "${vcpkg_DIR}/installed/x64-windows/share/libwebp")
     set(OpenEXR_DIR "${vcpkg_DIR}/installed/x64-windows/share/openexr")
-
+    set(nlohmann_json_DIR "${vcpkg_DIR}/installed/x64-windows/share/nlohmann_json")
 endif()
+
 # Find OpenCV package (for image examples)
 find_package(OpenCV REQUIRED)
+find_package(nlohmann_json 3.2.0 REQUIRED)
+find_package(Eigen3 REQUIRED)
 
 # Include directories
 include_directories(
@@ -81,7 +84,6 @@ add_executable(imu_receiver
     ${SENSOR_SOURCES}
 )
 
-# Create executables - GPS example
 add_executable(gps_receiver
     examples/gps_receiver_example.cpp
     ${NETWORK_SOURCES}
@@ -90,6 +92,13 @@ add_executable(gps_receiver
 
 add_executable(vehicle_state_receiver
     examples/vehicle_state_receiver_example.cpp
+    ${NETWORK_SOURCES}
+    ${SENSOR_SOURCES}
+)
+
+# Add sensor_recorder executable
+add_executable(sensor_recorder
+    dataset_generator/sensor_recording_to_morai_dataset.cpp
     ${NETWORK_SOURCES}
     ${SENSOR_SOURCES}
 )
@@ -108,7 +117,6 @@ target_link_libraries(imu_receiver PRIVATE
     ${PLATFORM_LIBS}
 )
 
-# Link libraries - GPS example
 target_link_libraries(gps_receiver PRIVATE 
     ${PLATFORM_LIBS}
 )
@@ -117,6 +125,12 @@ target_link_libraries(vehicle_state_receiver PRIVATE
     ${PLATFORM_LIBS}
 )
 
+# Link libraries for sensor_recorder
+target_link_libraries(sensor_recorder PRIVATE 
+    ${PLATFORM_LIBS}
+    nlohmann_json::nlohmann_json
+    Eigen3::Eigen
+)
 
 # Debug/Release configuration
 if(MSVC)
@@ -142,5 +156,33 @@ install(TARGETS
     imu_receiver
     gps_receiver
     vehicle_state_receiver
+    sensor_recorder
     RUNTIME DESTINATION bin
 )
+
+# Add test directory if testing is enabled
+if(BUILD_TESTING)
+    add_subdirectory(tests)
+endif()
+
+# Generate documentation if Doxygen is found
+find_package(Doxygen)
+if(DOXYGEN_FOUND)
+    set(DOXYGEN_IN ${CMAKE_CURRENT_SOURCE_DIR}/docs/Doxyfile.in)
+    set(DOXYGEN_OUT ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile)
+
+    configure_file(${DOXYGEN_IN} ${DOXYGEN_OUT} @ONLY)
+
+    add_custom_target(doc_doxygen ALL
+        COMMAND ${DOXYGEN_EXECUTABLE} ${DOXYGEN_OUT}
+        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+        COMMENT "Generating API documentation with Doxygen"
+        VERBATIM)
+endif()
+
+if(MSVC)
+    # Visual Studio specific settings for sensor_recorder
+    set_target_properties(sensor_recorder PROPERTIES
+        LINK_FLAGS "/SUBSYSTEM:CONSOLE"
+    )
+endif()

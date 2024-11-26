@@ -9,6 +9,7 @@ GPS::GPS(const std::string& ip_address, uint16_t port)
     is_running_ = true;
     is_gps_data_received_ = false;
     thread_gps_udp_receiver_ = std::thread(&GPS::ThreadGPSUdpReceiver, this);
+    thread_gps_udp_receiver_.detach();
 }
 
 GPS::~GPS()
@@ -28,7 +29,7 @@ bool GPS::GetGPSData(GPSData& data)
         return false;
     }
     is_gps_data_received_ = false;
-    return GetLatestGPSData(data);
+    return std::move(GetLatestGPSData(data));
 }
 
 bool GPS::GetLatestGPSData(GPSData& data)

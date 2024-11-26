@@ -9,6 +9,7 @@ VehicleState::VehicleState(const std::string& ip_address, uint16_t port)
 {
     is_running_ = true;
     thread_vehicle_state_receiver_ = std::thread(&VehicleState::ThreadVehicleStateReceiver, this);
+    thread_vehicle_state_receiver_.detach();
 }
 
 VehicleState::~VehicleState()
@@ -29,7 +30,7 @@ bool VehicleState::GetVehicleState(VehicleData& data)
         return false;
     }
 
-    data = vehicle_data_;
+    data = std::move(vehicle_data_);
     is_data_received_ = false;
     return true;
 }
