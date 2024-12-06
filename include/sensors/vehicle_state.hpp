@@ -50,10 +50,10 @@ class VehicleState : public UDPReceiver
      */
     struct Timestamp
     {  // 8 bytes
-#pragma pack(push, 1)
-        uint32_t seconds;      ///< (4 bytes) 경과된 초 단위 시간
-        uint32_t nanoseconds;  ///< (4 bytes) timestamp의 소수 단위 초 (나노초)
-#pragma pack(pop)
+// #pragma pack(push, 1)
+        int32_t seconds;      ///< (4 bytes) 경과된 초 단위 시간
+        int32_t nanoseconds;  ///< (4 bytes) timestamp의 소수 단위 초 (나노초)
+// #pragma pack(pop)
     };
 
     /**
@@ -62,11 +62,11 @@ class VehicleState : public UDPReceiver
      */
     struct Vector3
     {
-#pragma pack(push, 1)
+// #pragma pack(push, 1)
         float x;
         float y;
         float z;
-#pragma pack(pop)
+// #pragma pack(pop)
     };
 
     /**
@@ -84,7 +84,10 @@ class VehicleState : public UDPReceiver
             map_data_id;  ///< (4 bytes) Map data id 값 (0~9999: DigitalTwin, 10000~19999: Virtual)
         float accel_input;                  ///< (4 bytes) 가속 페달 입력값 (0~1)
         float brake_input;                  ///< (4 bytes) 브레이크 페달 입력값 (0~1)
-        Vector3 size;                       ///< (12 bytes) 차량 크기 (m)
+        // Vector3 size;                       ///< (12 bytes) 차량 크기 (m)
+        float size_x;
+        float size_y;
+        float size_z;
         float overhang;                     ///< (4 bytes) 전방 오버행
         float wheelbase;                    ///< (4 bytes) 축거
         float rear_overhang;                ///< (4 bytes) 후방 오버행
@@ -112,7 +115,7 @@ class VehicleState : public UDPReceiver
 
     union VehicleStatePacketStruct
     {
-        uint8_t data[PACKET_SIZE];  // 211 bytes
+        char data[PACKET_SIZE];  // 211 bytes
         struct
         {
 #pragma pack(push, 1)
@@ -121,7 +124,9 @@ class VehicleState : public UDPReceiver
             char dollar;               // 1 byte
             uint32_t length;           // 4 bytes
             uint8_t AuxData[12];       // 12 bytes
+#pragma pack(pop)
             VehicleData vehicle_data;  // 180 bytes
+#pragma pack(push, 1)
             uint8_t tail[2];           // 2 bytes
 #pragma pack(pop)
         } packet;
@@ -146,7 +151,7 @@ class VehicleState : public UDPReceiver
      */
     bool GetVehicleState(VehicleData& data);
 
- private:
+ public:
     /**
      * @brief UDP 수신 스레드 함수
      */
@@ -165,6 +170,7 @@ class VehicleState : public UDPReceiver
     std::atomic<bool> is_running_;               ///< 스레드 실행 상태
     std::mutex mutex_vehicle_data_;              ///< 데이터 보호를 위한 뮤텍스
     VehicleData vehicle_data_;                   ///< 최신 차량 상태 데이터
+    VehicleStatePacketStruct packet_data_;
     bool is_data_received_;                      ///< 데이터 수신 여부
 };
 

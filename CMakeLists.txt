@@ -33,8 +33,8 @@ if(WIN32)
     set(libtiff_DIR "${vcpkg_DIR}/installed/x64-windows/share/libtiff")
     set(libwebp_DIR "${vcpkg_DIR}/installed/x64-windows/share/libwebp")
     set(OpenEXR_DIR "${vcpkg_DIR}/installed/x64-windows/share/openexr")
-
 endif()
+
 # Find OpenCV package (for image examples)
 find_package(OpenCV REQUIRED)
 
@@ -51,7 +51,7 @@ set(NETWORK_SOURCES
 )
 
 set(SENSOR_SOURCES
-    src/sensors/camera.cpp
+    # src/sensors/camera.cpp
     src/sensors/imu.cpp
     src/sensors/gps.cpp
     src/sensors/vehicle_state.cpp
@@ -62,23 +62,36 @@ add_executable(basic_receiver
     examples/udp_receiver_example.cpp
     ${NETWORK_SOURCES}
 )
-
+target_link_libraries(basic_receiver PRIVATE ${PLATFORM_LIBS})
+    
 add_executable(basic_sender 
     examples/udp_sender_example.cpp
     ${NETWORK_SOURCES}
 )
+target_link_libraries(basic_sender PRIVATE ${PLATFORM_LIBS})
 
 # Create executables - Sensor examples
-add_executable(camera_receiver
-    examples/camera_receiver_example.cpp
-    ${NETWORK_SOURCES}
-    ${SENSOR_SOURCES}
-)
+# add_executable(camera_receiver
+#     examples/camera_receiver_example.cpp
+#     ${NETWORK_SOURCES}
+#     ${SENSOR_SOURCES}
+# )
+# target_link_libraries(camera_receiver PRIVATE 
+#     ${PLATFORM_LIBS}
+#     if(DEFINED OpenCV_LIBS)
+#         ${OpenCV_LIBS}
+#     else()
+#         ${OpenCV_LIBRARIES}
+#     endif()
+# )
 
 add_executable(imu_receiver
     examples/imu_receiver_example.cpp
     ${NETWORK_SOURCES}
     ${SENSOR_SOURCES}
+)
+target_link_libraries(imu_receiver PRIVATE 
+    ${PLATFORM_LIBS}
 )
 
 # Create executables - GPS example
@@ -87,36 +100,35 @@ add_executable(gps_receiver
     ${NETWORK_SOURCES}
     ${SENSOR_SOURCES}
 )
+target_link_libraries(gps_receiver PRIVATE 
+    ${PLATFORM_LIBS}
+)
 
 add_executable(vehicle_state_receiver
     examples/vehicle_state_receiver_example.cpp
     ${NETWORK_SOURCES}
     ${SENSOR_SOURCES}
 )
-
-# Link libraries - Basic examples
-target_link_libraries(basic_receiver PRIVATE ${PLATFORM_LIBS})
-target_link_libraries(basic_sender PRIVATE ${PLATFORM_LIBS})
-
-# Link libraries - Sensor examples
-target_link_libraries(camera_receiver PRIVATE 
-    ${PLATFORM_LIBS} 
-    ${OpenCV_LIBS}
-)
-
-target_link_libraries(imu_receiver PRIVATE 
-    ${PLATFORM_LIBS}
-)
-
-# Link libraries - GPS example
-target_link_libraries(gps_receiver PRIVATE 
-    ${PLATFORM_LIBS}
-)
-
 target_link_libraries(vehicle_state_receiver PRIVATE 
     ${PLATFORM_LIBS}
 )
 
+# Ego Control Example
+add_executable(ego_control_example
+    examples/ego_control_example.cpp
+    src/actuator/ego_ctl.cpp
+    src/network/udp_sender.cpp
+)
+
+target_include_directories(ego_control_example
+    PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+)
+
+target_link_libraries(ego_control_example
+    PRIVATE
+    ${REQUIRED_LIBS}  # 필요한 라이브러리들 (예: pthread 등)
+)
 
 # Debug/Release configuration
 if(MSVC)
@@ -135,12 +147,15 @@ endif()
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
 # Installation settings
-install(TARGETS 
-    basic_receiver 
-    basic_sender
-    camera_receiver
-    imu_receiver
-    gps_receiver
-    vehicle_state_receiver
-    RUNTIME DESTINATION bin
-)
+if(WIN32)
+    install(TARGETS 
+        basic_receiver 
+        basic_sender
+        camera_receiver
+        imu_receiver
+        gps_receiver
+        vehicle_state_receiver
+        ego_control_example
+        RUNTIME DESTINATION bin
+    )
+endif()

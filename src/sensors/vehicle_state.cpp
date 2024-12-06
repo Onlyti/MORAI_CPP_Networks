@@ -50,28 +50,21 @@ void VehicleState::ThreadVehicleStateReceiver()
                 continue;
             }
 
-            // std::cout << "Packet: ";
-            // for (size_t i = 0; i < received_size; ++i)
-            // {
-            //     std::cout << i << ": " << std::setw(2) << std::setfill('0') << std::hex
-            //               << static_cast<int>(packet_buffer[i]) << std::dec << std::endl;
-            // }
-            // std::cout << std::endl;
-            // continue;
-
             if (received_size != PACKET_SIZE)
             {
                 std::cerr << "Received unexpected packet size: " << received_size
                           << " (expected: " << PACKET_SIZE << ")" << std::endl;
                 continue;
             }
-
-            VehicleStatePacketStruct temp_data;
-            if (ParseVehicleState(packet_buffer, received_size, temp_data))
+            
+            memset(&packet_data_, 0, sizeof(VehicleStatePacketStruct));
+            if (ParseVehicleState(packet_buffer, received_size, packet_data_))
             {
-                std::lock_guard<std::mutex> lock(mutex_vehicle_data_);
-                memcpy(&vehicle_data_, &temp_data.packet.vehicle_data, sizeof(VehicleData));
+                // std::lock_guard<std::mutex> lock(mutex_vehicle_data_);
+                mutex_vehicle_data_.lock();
+                memcpy(&vehicle_data_, &packet_data_.packet.vehicle_data, sizeof(VehicleData));
                 is_data_received_ = true;
+                mutex_vehicle_data_.unlock();
             }
         }
         catch (const std::exception& e)
@@ -91,7 +84,35 @@ bool VehicleState::ParseVehicleState(const char* buffer, size_t size, VehicleSta
 
     size_t offset = 0;
 
-    std::memcpy(&data, buffer, sizeof(VehicleStatePacketStruct));
+    // std::memcpy(data.data, buffer, sizeof(VehicleStatePacketStruct));
+    
+    // Parse Sharp (1 byte) - "#"
+    std::memcpy(&data.packet.sharp, buffer + offset, sizeof(uint8_t));
+    offset += sizeof(uint8_t);
+
+    // Parse Header (9 bytes) - "MoraiInfo"
+    std::memcpy(&data.packet.header, buffer + offset, sizeof(char[9]));
+    offset += sizeof(char[9]);
+
+    // Parse Dollar (1 byte) - "$"
+    std::memcpy(&data.packet.dollar, buffer + offset, sizeof(uint8_t));
+    offset += sizeof(uint8_t);
+
+    // Parse Length (4 bytes)
+    std::memcpy(&data.packet.length, buffer + offset, sizeof(uint32_t));
+    offset += sizeof(uint32_t);
+
+    // Parse Aux Data (12 bytes)
+    std::memcpy(&data.packet.AuxData, buffer + offset, sizeof(uint8_t[12]));
+    offset += sizeof(uint8_t[12]);
+
+    // Parse Vehicle Data (180 bytes)
+    std::memcpy(&data.packet.vehicle_data, buffer + offset, sizeof(VehicleData));
+    offset += sizeof(VehicleData);
+
+    // Parse Tail (2 bytes)
+    std::memcpy(&data.packet.tail, buffer + offset, sizeof(uint8_t[2]));
+    offset += sizeof(uint8_t[2]);
 
     // // Parse Timestamp (8 bytes)
     // std::memcpy(&data.timestamp.seconds, buffer + offset, sizeof(uint32_t));

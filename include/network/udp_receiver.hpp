@@ -15,6 +15,9 @@
 #pragma once
 #include <string>
 #include <stdexcept>
+#include <thread>
+#include <memory>
+#include <cstring>
 
 #ifdef _WIN32
     #include <winsock2.h>
