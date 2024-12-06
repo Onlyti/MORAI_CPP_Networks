@@ -73,106 +73,37 @@ int main(int argc, char** argv)
                 std::cout << "\n=== Vehicle State Data ===" << "\n";
 
                 // Timestamp
-                int offset = 1;
-                offset += 1 + 9 + 1 + 4 + 12; // sharp + header + dollar + length + aux_data
                 std::cout << "Timestamp:" << "\n"
                          << "\tSeconds: " << data.timestamp.seconds << "\n"
-                         << "\t\tSecondsPacket: 0x" << std::hex << static_cast<int>(packet_data.data[offset+0]) <<", " << static_cast<int>(packet_data.data[offset+1])<< ", " << static_cast<int>(packet_data.data[offset+2]) << ", " << static_cast<int>(packet_data.data[offset+3]) << ", " << std::dec << "\n"
-                         << "\tNanoseconds: " << data.timestamp.nanoseconds << "\n"
-                         << "\t\tNanosecondsPacket: 0x" << std::hex << static_cast<int>(packet_data.data[offset+4]) <<", " << static_cast<int>(packet_data.data[offset+5]) << ", " << static_cast<int>(packet_data.data[offset+6]) << ", " << static_cast<int>(packet_data.data[offset+7]) << ", " << std::dec << "\n";
-                offset += 4; // seconds
-                offset += 4; // nanoseconds
+                         << "\tNanoseconds: " << data.timestamp.nanoseconds << "\n";
 
                 // Control Mode and Gear
                 std::cout << "Control Mode: " << ControlModeToString(data.ctrl_mode) << "\n"
-                         << "\tCtrlModePacket: 0x" << std::hex << static_cast<int>(packet_data.data[offset]) << std::dec << "\n"
-                         << "Gear: " << GearToString(data.gear) << "\n"
-                         << "\tGearPacket: 0x" << std::hex << static_cast<int>(packet_data.data[offset+1]) << std::dec << "\n";
-                offset += 1; // ctrl_mode
-                offset += 1; // gear
+                         << "Gear: " << GearToString(data.gear) << "\n";
 
                 // Vehicle Speed and Map Data
                 std::cout << "Signed Velocity: " << std::fixed << std::setprecision(2) 
-                         << data.signed_velocity << " km/h" << "\n"
-                         << "\tSignedVelocityPacket: 0x" << std::hex 
-                         << static_cast<int>(packet_data.data[offset]) << ", "
-                         << static_cast<int>(packet_data.data[offset+1]) << ", "
-                         << static_cast<int>(packet_data.data[offset+2]) << ", "
-                         << static_cast<int>(packet_data.data[offset+3]) 
-                         << std::dec << "\n";
-                offset += 4; // signed_velocity
+                         << data.signed_velocity << " km/h" << "\n";
+                
                 std::cout << "Map Data ID: " << data.map_data_id 
-                         << (data.map_data_id < 10000 ? " (DigitalTwin)" : " (Virtual)") 
-                         << "\tMapDataIDPacket: 0x" << std::hex 
-                         << static_cast<int>(packet_data.data[offset]) << ", "
-                         << static_cast<int>(packet_data.data[offset+1]) << ", "
-                         << static_cast<int>(packet_data.data[offset+2]) << ", "
-                         << static_cast<int>(packet_data.data[offset+3]) 
-                         << std::dec << "\n";
-                offset += 4; // map_data_id
-
+                         << (data.map_data_id < 10000 ? " (DigitalTwin)" : " (Virtual)") << "\n";
+                
                 // Pedal Inputs
                 std::cout << "Pedal Inputs:" << "\n"
                          << "\tAccel: " << std::fixed << std::setprecision(3) 
                          << data.accel_input << "\n"
-                         << "\tAccelPacket: 0x" << std::hex 
-                         << static_cast<int>(packet_data.data[offset]) << ", "
-                         << static_cast<int>(packet_data.data[offset+1]) << ", "
-                         << static_cast<int>(packet_data.data[offset+2]) << ", "
-                         << static_cast<int>(packet_data.data[offset+3]) 
-                         << std::dec << "\n"
                          << "\tBrake: " << std::fixed << std::setprecision(3) 
-                         << data.brake_input << "\n"
-                         << "\tBrakePacket: 0x" << std::hex 
-                         << static_cast<int>(packet_data.data[offset+6]) << ", "
-                         << static_cast<int>(packet_data.data[offset+7]) << ", "
-                         << static_cast<int>(packet_data.data[offset+8]) << ", "
-                         << static_cast<int>(packet_data.data[offset+9]) 
-                         << std::dec << "\n";
-                offset += 4; // accel
-                offset += 4; // brake
+                         << data.brake_input << "\n";
 
                 // Vehicle Dimensions
-                // PrintVector3("Vehicle Size", data.size, "m");
+                PrintVector3("Size", data.size, "m");
 
-                char size_x_packet[4];
-                memcpy(size_x_packet, &packet_data.data[offset], 4);
-                offset += 4; // size_x
-                char size_y_packet[4];
-                memcpy(size_y_packet, &packet_data.data[offset], 4);
-                offset += 4; // size_y
-                char size_z_packet[4];
-                memcpy(size_z_packet, &packet_data.data[offset], 4);
-                offset += 4; // size_z
-                std::cout << "Size:" << "\n"
-                         << "\tX: " << std::fixed << std::setprecision(3) 
-                         << data.size_x << "m" << "\n"
-                         << "\tSizeXPacket: 0x" << std::hex << static_cast<int>(*size_x_packet) << std::dec << "\n"
-                         << "\tY: " << std::fixed << std::setprecision(3) 
-                         << data.size_y << "m" << "\n"
-                         << "\tSizeYPacket: 0x" << std::hex << static_cast<int>(*size_y_packet) << std::dec << "\n"
-                         << "\tZ: " << std::fixed << std::setprecision(3) 
-                         << data.size_z << "m" << "\n"
-                         << "\tSizeZPacket: 0x" << std::hex << static_cast<int>(*size_z_packet) << std::dec << "\n";
-
-                char overhang_packet[4];
-                memcpy(overhang_packet, &packet_data.data[offset], 4);
-                offset += 4; // overhang
                 std::cout << "Overhang: " << std::fixed << std::setprecision(3) 
-                         << data.overhang << "m" << "\n"
-                         << "\tOverhangPacket: 0x" << std::hex << static_cast<int>(*overhang_packet) << std::dec << "\n";
-                char wheelbase_packet[4];
-                memcpy(wheelbase_packet, &packet_data.data[offset], 4);
-                offset += 4; // wheelbase
+                         << data.overhang << "m" << "\n";
                 std::cout << "Wheelbase: " << std::fixed << std::setprecision(3) 
-                         << data.wheelbase << "m" << "\n"
-                         << "\tWheelbasePacket: 0x" << std::hex << static_cast<int>(*wheelbase_packet) << std::dec << "\n";
-                char rear_overhang_packet[4];
-                memcpy(rear_overhang_packet, &packet_data.data[offset], 4);
-                offset += 4; // rear_overhang
+                         << data.wheelbase << "m" << "\n";
                 std::cout << "Rear Overhang: " << std::fixed << std::setprecision(3) 
-                         << data.rear_overhang << "m" << "\n"
-                         << "\tRearOverhangPacket: 0x" << std::hex << static_cast<int>(*rear_overhang_packet) << std::dec << "\n";
+                         << data.rear_overhang << "m" << "\n";
 
                 // Vehicle State
                 PrintVector3("Position", data.position, "m");
