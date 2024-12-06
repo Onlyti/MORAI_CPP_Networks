@@ -1,6 +1,5 @@
 #include "sensors/imu.hpp"
-
-#include <iomanip>
+#include <cstring>
 #include <iostream>
 
 IMU::IMU(const std::string& ip_address, uint16_t port)
@@ -40,29 +39,23 @@ bool IMU::GetLatestIMUData(IMUData& data)
 
 void IMU::ThreadIMUUdpReceiver()
 {
-    char packet_buffer[MAX_PACKET_SIZE];
+    char packet_buffer[PACKET_SIZE];
 
     while (is_running_)
     {
-        // Receive data from UDP
         size_t received_size = 0;
-        if (!Receive(packet_buffer, MAX_PACKET_SIZE, received_size))
+        if (!Receive(packet_buffer, PACKET_SIZE, received_size))
         {
             std::cerr << "Failed to receive IMU data" << std::endl;
             continue;
         }
 
-        // Check header: "#IMUData$"
-        IMUPacketHeader header;
-        std::memcpy(&header, packet_buffer, sizeof(IMUPacketHeader));
-        std::string header_str(reinterpret_cast<char*>(header.header), 9);
-        if (header_str != "#IMUData$")
-        {
-            std::cerr << "Invalid header" << std::endl;
-            continue;
-        }
+        // if (received_size != PACKET_SIZE)
+        // {
+        //     std::cerr << "Invalid packet size: " << received_size << " (expected: " << PACKET_SIZE << ")" << std::endl;
+        //     continue;
+        // }
 
-        // Parse IMU data
         IMUData temp_data;
         if (ParseIMUData(packet_buffer, received_size, temp_data))
         {
@@ -75,36 +68,54 @@ void IMU::ThreadIMUUdpReceiver()
 
 bool IMU::ParseIMUData(const char* buffer, size_t size, IMUData& data)
 {
-    if (size < sizeof(107))
-    {
-        std::cerr << "Received IMU data is too small" << std::endl;
-        return false;
-    }
+    // if (size != PACKET_SIZE)
+    // {
+    //     return false;
+    // }
 
-    const IMUPacketStruct* imu_packet = reinterpret_cast<const IMUPacketStruct*>(buffer);
+    size_t offset = 0;
 
-    // Check tail
-    if (imu_packet->packet.tail[0] != 0x0D || imu_packet->packet.tail[1] != 0x0A)
-    {
-        std::cerr << "Invalid tail" << std::endl;
-        return false;
-    }
+    // Skip header "#IMUData$" (9 bytes)
+    offset += 9;
+
+    // Skip size field (4 bytes)
+    offset += 4;
+
+    // Skip aux data (12 bytes)
+    offset += 20;  // Actually 20 bytes in protocol
 
     // Parse orientation (Quaternion)
-    data.w = imu_packet->packet.imu_data.orientation[0];
-    data.x = imu_packet->packet.imu_data.orientation[1];
-    data.y = imu_packet->packet.imu_data.orientation[2];
-    data.z = imu_packet->packet.imu_data.orientation[3];
+    std::memcpy(&data.w, buffer + offset, sizeof(double));
+    offset += sizeof(double);
+    std::memcpy(&data.x, buffer + offset, sizeof(double));
+    offset += sizeof(double);
+    std::memcpy(&data.y, buffer + offset, sizeof(double));
+    offset += sizeof(double);
+    std::memcpy(&data.z, buffer + offset, sizeof(double));
+    offset += sizeof(double);
 
     // Parse angular velocity
-    data.angular_velocity_x = imu_packet->packet.imu_data.angular_velocity[0];
-    data.angular_velocity_y = imu_packet->packet.imu_data.angular_velocity[1];
-    data.angular_velocity_z = imu_packet->packet.imu_data.angular_velocity[2];
+    std::memcpy(&data.angular_velocity_x, buffer + offset, sizeof(double));
+    offset += sizeof(double);
+    std::memcpy(&data.angular_velocity_y, buffer + offset, sizeof(double));
+    offset += sizeof(double);
+    std::memcpy(&data.angular_velocity_z, buffer + offset, sizeof(double));
+    offset += sizeof(double);
 
     // Parse linear acceleration
-    data.linear_acceleration_x = imu_packet->packet.imu_data.linear_acceleration[0];
-    data.linear_acceleration_y = imu_packet->packet.imu_data.linear_acceleration[1];
-    data.linear_acceleration_z = imu_packet->packet.imu_data.linear_acceleration[2];
+    std::memcpy(&data.linear_acceleration_x, buffer + offset, sizeof(double));
+    offset += sizeof(double);
+    std::memcpy(&data.linear_acceleration_y, buffer + offset, sizeof(double));
+    offset += sizeof(double);
+    std::memcpy(&data.linear_acceleration_z, buffer + offset, sizeof(double));
+    offset += sizeof(double);
+
+    // Check tail (2 bytes)
+    if (buffer[size-2] != 0x0D || buffer[size-1] != 0x0A)
+    {
+        std::cerr << "Invalid tail marker" << std::endl;
+        return false;
+    }
 
     return true;
 }

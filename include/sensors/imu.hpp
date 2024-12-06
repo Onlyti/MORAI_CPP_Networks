@@ -18,28 +18,13 @@
  */
 class IMU : public UDPReceiver
 {
-    const static size_t MAX_PACKET_SIZE = 1024;
+    const static size_t PACKET_SIZE = 115;  // 25(header) + 80(data) + 2(tail)
 
- public:
-    // IMU Data Types
-    struct IMUPacketHeader  // (25byte)
-    {
-#pragma pack(push, 1)
-        // Header (9byte) - "#IMUData$"
-        uint8_t header[9];
-
-        // Size (4byte)
-        int32_t size;
-
-        // Aux Data (12byte)
-        uint8_t aux_data[12 + 8];  // Manual says 12, but it's 20
-#pragma pack(pop)
-    };
-
+public:
     /**
      * @brief IMU 센서 데이터를 저장하는 구조체
      */
-    struct IMUData  // (80byte)
+    struct IMUData
     {
         // Orientation (Quaternion)
         double w;
@@ -56,30 +41,6 @@ class IMU : public UDPReceiver
         double linear_acceleration_x;
         double linear_acceleration_y;
         double linear_acceleration_z;
-    };
-
-    union IMUPacketStruct
-    {
-        // Initialize data to 0
-        uint8_t data[MAX_PACKET_SIZE] = {0};
-        struct
-        {
-#pragma pack(push, 1)
-            // Header (25byte)
-            IMUPacketHeader header;
-
-            // IMU Data Block (80byte)
-            struct
-            {
-                double orientation[4];          // Quaternion (32byte)
-                double angular_velocity[3];     // rad/s (24byte)
-                double linear_acceleration[3];  // m/s² (24byte)
-            } imu_data;
-
-            // Tail (2byte) - Fixed value 0x0D, 0x0A
-            uint8_t tail[2];
-#pragma pack(pop)
-        } packet;
     };
 
     IMU() = delete;  // Prevent default constructor
@@ -113,7 +74,7 @@ class IMU : public UDPReceiver
      */
     bool GetLatestIMUData(IMUData& data);
 
- private:
+private:
     /**
      * @brief UDP 수신 스레드 함수
      * @note 이 함수는 별도의 스레드에서 실행되며, IMU 데이터를 지속적으로 수신합니다
@@ -129,11 +90,8 @@ class IMU : public UDPReceiver
      */
     bool ParseIMUData(const char* buffer, size_t size, IMUData& data);
 
-    // UDP Receiver
     std::thread thread_imu_udp_receiver_;
     std::atomic<bool> is_running_;
-
-    // IMU Data
     std::mutex mutex_imu_data_;
     IMUData imu_data_;
     bool is_imu_data_received_;
