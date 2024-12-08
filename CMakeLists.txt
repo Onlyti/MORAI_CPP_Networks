@@ -38,6 +38,12 @@ endif()
 # Find OpenCV package (for image examples)
 find_package(OpenCV REQUIRED)
 
+if(WIN32)
+    set(OpenCV_LIBS ${OpenCV_LIBS})
+else()
+    set(OpenCV_LIBS ${OpenCV_LIBRARIES})
+endif()
+
 # Include directories
 include_directories(
     ${PROJECT_SOURCE_DIR}/include
@@ -51,7 +57,7 @@ set(NETWORK_SOURCES
 )
 
 set(SENSOR_SOURCES
-    # src/sensors/camera.cpp
+    src/sensors/camera.cpp
     src/sensors/imu.cpp
     src/sensors/gps.cpp
     src/sensors/vehicle_state.cpp
@@ -71,24 +77,21 @@ add_executable(basic_sender
 target_link_libraries(basic_sender PRIVATE ${PLATFORM_LIBS})
 
 # Create executables - Sensor examples
-# add_executable(camera_receiver
-#     examples/camera_receiver_example.cpp
-#     ${NETWORK_SOURCES}
-#     ${SENSOR_SOURCES}
-# )
-# target_link_libraries(camera_receiver PRIVATE 
-#     ${PLATFORM_LIBS}
-#     if(DEFINED OpenCV_LIBS)
-#         ${OpenCV_LIBS}
-#     else()
-#         ${OpenCV_LIBRARIES}
-#     endif()
-# )
+add_executable(camera_receiver
+    examples/camera_receiver_example.cpp
+    ${NETWORK_SOURCES}
+    src/sensors/camera.cpp
+)
+
+target_link_libraries(camera_receiver PRIVATE 
+    ${PLATFORM_LIBS}
+    ${OpenCV_LIBS}
+)
 
 add_executable(imu_receiver
     examples/imu_receiver_example.cpp
     ${NETWORK_SOURCES}
-    ${SENSOR_SOURCES}
+    src/sensors/imu.cpp
 )
 target_link_libraries(imu_receiver PRIVATE 
     ${PLATFORM_LIBS}
@@ -98,7 +101,7 @@ target_link_libraries(imu_receiver PRIVATE
 add_executable(gps_receiver
     examples/gps_receiver_example.cpp
     ${NETWORK_SOURCES}
-    ${SENSOR_SOURCES}
+    src/sensors/gps.cpp
 )
 target_link_libraries(gps_receiver PRIVATE 
     ${PLATFORM_LIBS}
@@ -107,7 +110,7 @@ target_link_libraries(gps_receiver PRIVATE
 add_executable(vehicle_state_receiver
     examples/vehicle_state_receiver_example.cpp
     ${NETWORK_SOURCES}
-    ${SENSOR_SOURCES}
+    src/sensors/vehicle_state.cpp
 )
 target_link_libraries(vehicle_state_receiver PRIVATE 
     ${PLATFORM_LIBS}
