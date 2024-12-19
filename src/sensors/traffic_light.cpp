@@ -5,27 +5,22 @@
 #include <thread>
 
 TrafficLight::TrafficLight(const std::string& ip_address, uint16_t port)
-    : UDPReceiver(ip_address, port), is_running_(false), is_data_received_(false)
-{
+    : UDPReceiver(ip_address, port), is_running_(false), is_data_received_(false) {
     is_running_ = true;
     thread_traffic_light_receiver_ = std::thread(&TrafficLight::ThreadTrafficLightReceiver, this);
 }
 
-TrafficLight::~TrafficLight()
-{
+TrafficLight::~TrafficLight() {
     is_running_ = false;
-    if (thread_traffic_light_receiver_.joinable())
-    {
+    if (thread_traffic_light_receiver_.joinable()) {
         thread_traffic_light_receiver_.join();
     }
     Close();
 }
 
-bool TrafficLight::GetTrafficLightState(TrafficLightData& data)
-{
+bool TrafficLight::GetTrafficLightState(TrafficLightData& data) {
     std::lock_guard<std::mutex> lock(mutex_traffic_light_data_);
-    if (!is_data_received_)
-    {
+    if (!is_data_received_) {
         return false;
     }
 
@@ -34,48 +29,38 @@ bool TrafficLight::GetTrafficLightState(TrafficLightData& data)
     return true;
 }
 
-void TrafficLight::ThreadTrafficLightReceiver()
-{
+void TrafficLight::ThreadTrafficLightReceiver() {
     char packet_buffer[PACKET_SIZE];
 
-    while (is_running_)
-    {
-        try
-        {
+    while (is_running_) {
+        try {
             size_t received_size = 0;
-            if (!Receive(packet_buffer, PACKET_SIZE, received_size))
-            {
+            if (!Receive(packet_buffer, PACKET_SIZE, received_size)) {
                 std::cerr << "Failed to receive traffic light data" << std::endl;
                 continue;
             }
 
-            if (received_size != PACKET_SIZE)
-            {
-                std::cerr << "Received unexpected packet size: " << received_size
-                          << " (expected: " << PACKET_SIZE << ")" << std::endl;
+            if (received_size != PACKET_SIZE) {
+                std::cerr << "Received unexpected packet size: " << received_size << " (expected: " << PACKET_SIZE
+                          << ")" << std::endl;
                 continue;
             }
-            
+
             memset(&packet_data_, 0, sizeof(TrafficLightPacketStruct));
-            if (ParseTrafficLight(packet_buffer, received_size, packet_data_))
-            {
+            if (ParseTrafficLight(packet_buffer, received_size, packet_data_)) {
                 std::lock_guard<std::mutex> lock(mutex_traffic_light_data_);
                 memcpy(&traffic_light_data_, &packet_data_.packet.traffic_light_data, sizeof(TrafficLightData));
                 is_data_received_ = true;
             }
-        }
-        catch (const std::exception& e)
-        {
+        } catch (const std::exception& e) {
             std::cerr << "Traffic light error: " << e.what() << std::endl;
             continue;
         }
     }
 }
 
-bool TrafficLight::ParseTrafficLight(const char* buffer, size_t size, TrafficLightPacketStruct& data)
-{
-    if (size != PACKET_SIZE)
-    {
+bool TrafficLight::ParseTrafficLight(const char* buffer, size_t size, TrafficLightPacketStruct& data) {
+    if (size != PACKET_SIZE) {
         return false;
     }
 
@@ -93,7 +78,7 @@ bool TrafficLight::ParseTrafficLight(const char* buffer, size_t size, TrafficLig
     std::memcpy(&data.packet.header, buffer + offset, sizeof(char[12]));
     offset += sizeof(char[12]);
     if (strncmp(data.packet.header, "TrafficLight", 12) != 0) {
-        std::cerr << "Invalid header" << std::endl;
+        std::cerr << "Invalid header: " << data.packet.header << std::endl;
         return false;
     }
 
@@ -132,4 +117,4 @@ bool TrafficLight::ParseTrafficLight(const char* buffer, size_t size, TrafficLig
     }
 
     return true;
-} 
+}
