@@ -61,6 +61,7 @@ set(SENSOR_SOURCES
     src/sensors/imu.cpp
     src/sensors/gps.cpp
     src/sensors/vehicle_state.cpp
+    src/sensors/traffic_light.cpp
 )
 
 # Create executables - Basic examples
@@ -116,6 +117,16 @@ target_link_libraries(vehicle_state_receiver PRIVATE
     ${PLATFORM_LIBS}
 )
 
+# Create executable - Traffic Light example
+add_executable(traffic_light_receiver
+    examples/traffic_light_receiver_example.cpp
+    ${NETWORK_SOURCES}
+    src/sensors/traffic_light.cpp
+)
+target_link_libraries(traffic_light_receiver PRIVATE 
+    ${PLATFORM_LIBS}
+)
+
 # Ego Control Example
 add_executable(ego_control_example
     examples/ego_control_example.cpp
@@ -159,6 +170,7 @@ if(WIN32)
         gps_receiver
         vehicle_state_receiver
         ego_control_example
+        traffic_light_receiver
         RUNTIME DESTINATION bin
     )
 endif()
