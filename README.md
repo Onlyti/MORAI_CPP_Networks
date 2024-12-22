@@ -52,7 +52,7 @@
 
 3. 실행
    ~~~~ bash
-   # camera_receiver 예제 실�� (포트: 7777)
+   # camera_receiver 예제 실행 (포트: 7777)
    cd bin\Release
    camera_receiver.exe 7777
    ~~~~
