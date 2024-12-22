@@ -52,7 +52,7 @@
 
 3. 실행
    ~~~~ bash
-   # camera_receiver 예제 실�� (포트: 7777)
+   # camera_receiver 예제 실행 (포트: 7777)
    cd bin\Release
    camera_receiver.exe 7777
    ~~~~
@@ -110,7 +110,7 @@
    - camera_receiver: 카메라 데이터 수신 예제
    - imu_receiver: IMU 데이터 수신 예제
    - gps_receiver: GPS 데이터 수신 예제
-   - vehicle_state_receiver: 차�� 상태 데이터 수신 예제
+   - vehicle_state_receiver: 차량 상태 데이터 수신 예제
    - traffic_light_receiver: 신호등 데이터 수신 예제
    - object_info_receiver: 객체 정보 수신 예제
 
