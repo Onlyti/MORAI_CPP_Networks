@@ -179,21 +179,22 @@ else()
 endif()
 
 # Add sensor_recorder executable
-add_executable(sensor_recorder
+add_executable(sensor_recorder 
     dataset_generator/sensor_recording_to_morai_dataset.cpp
     src/sensors/camera.cpp
     src/sensors/imu.cpp
     src/sensors/gps.cpp
     src/sensors/vehicle_state.cpp
+    src/sensors/traffic_light.cpp
+    src/sensors/object_info.cpp
     src/network/udp_receiver.cpp
 )
-
-# Link libraries for sensor_recorder
-target_link_libraries(sensor_recorder PRIVATE 
-    ${PLATFORM_LIBS}
-    ${OpenCV_LIBS}
+target_link_libraries(sensor_recorder
+    ${catkin_LIBRARIES}
+    ${OpenCV_LIBRARIES}
     nlohmann_json::nlohmann_json
     Eigen3::Eigen
+    morai_cpp_networks_network
 )
 
 # Vehicle state receiver

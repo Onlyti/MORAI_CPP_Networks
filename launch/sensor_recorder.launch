@@ -1,0 +1,7 @@
+<launch>
+    <node pkg="morai_cpp_networks" type="sensor_recorder" name="sensor_recorder" output="screen">
+        <param name="sensor_config_path" value="/mnt/c/Users/USER/Desktop/MoraiLauncher_Win/MoraiLauncher_Win_Data/SaveFile/Sensor/24.R2.H2/SensorInfo_2023_Hyundai_Ioniq5.json"/>
+        <param name="network_config_path" value="/mnt/c/Users/USER/Desktop/MoraiLauncher_Win/MoraiLauncher_Win_Data/SaveFile/Network/24.R2.H2/ioniq5_2.json"/>
+        <param name="dataset_path" value="/mnt/c/Users/USER/Desktop/TestDataset"/>
+    </node>
+</launch> 
