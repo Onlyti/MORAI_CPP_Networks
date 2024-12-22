@@ -1,86 +1,102 @@
+#include <atomic>
 #include <iostream>
-#include <opencv2/opencv.hpp>
-#include <iomanip>
-
+#include <thread>
 #include "sensors/camera.hpp"
 
-int main(int argc, char** argv)
-{
-    // Wait for debug attach
-    // std::cout << "Waiting for debug attach..." << std::endl;
-    // std::cin.get();
+#ifndef _WIN32
+#include <cv_bridge/cv_bridge.h>
+#include <image_transport/image_transport.h>
+#include <ros/ros.h>
+#include <sensor_msgs/Image.h>
+#endif
 
-    int port = argc > 1 ? std::stoi(argv[1]) : 7777;
+std::atomic<bool> is_running(true);
 
-    printf("port: %d\n", port);
-    try
-    {
-        std::cout << "Camera receiver example" << std::endl;
-        // UDP 수신을 위한 Camera 객체 생성 (IP와 포트 설정)
-        Camera camera("127.0.0.1", port);  // 실제 MORAI 시뮬레이터의 IP와 포트로 변경하세요
+#ifndef _WIN32
+image_transport::Publisher image_pub;
 
-        std::cout << "Waiting for camera data..." << std::endl;
+void PublishImage(const cv::Mat& image) {
+    if (image.empty()) return;
 
-        while (true)
-        {
-            Camera::CameraData camera_data;
-            Camera::BoundingBoxData bbox_data;
+    // Convert OpenCV image to ROS message
+    std_msgs::Header header;
+    header.stamp = ros::Time::now();
+    header.frame_id = "camera";
 
-            // 카메라 데이터 수신
-            if (camera.GetSyncData(camera_data, bbox_data) == false)
-            {
-                std::cout << "Failed to get sync data" << std::endl;
-                continue;
-            }
-            else if (camera_data.image_data.empty() == false)
-            {
-                std::cout << "Received camera data" << std::endl;
-                std::cout << "Camera timestamp: " << std::endl
-                          << "\t" << std::fixed << std::setprecision(3) << camera_data.timestamp << std::endl;
-                std::cout << "Bounding box timestamp: " << std::endl
-                          << "\t" << std::fixed << std::setprecision(3) << bbox_data.timestamp << std::endl;
+    sensor_msgs::ImagePtr msg = cv_bridge::CvImage(header, "bgr8", image).toImageMsg();
+    image_pub.publish(msg);
+}
+#endif
 
-                // 이미지에 2D 바운딩 박스 그리기
-                for (size_t i = 0; i < bbox_data.bbox_2d.size(); i++)
-                {
-                    const auto& bbox = bbox_data.bbox_2d[i];
-                    const auto& cls = bbox_data.classes[i];
+void OnCameraData(const Camera::CameraData& camera_data) {
+    if (!camera_data.image_data.empty()) {
+        cv::imshow("Camera Image", camera_data.image_data);
+        cv::waitKey(1);
 
-                    // 바운딩 박스 그리기
-                    cv::rectangle(camera_data.image_data, cv::Point(bbox.x_min, bbox.y_min),
-                                  cv::Point(bbox.x_max, bbox.y_max), cv::Scalar(0, 255, 0), 2);
+#ifndef _WIN32
+        PublishImage(camera_data.image_data);
+#endif
+    }
+}
 
-                    // 클래스 정보 표시
-                    std::string class_text = "Class: " + std::to_string(cls.group_id) + "," +
-                                             std::to_string(cls.class_id) + "," +
-                                             std::to_string(cls.sub_class_id);
-                    cv::putText(camera_data.image_data, class_text,
-                                cv::Point(bbox.x_min, bbox.y_min - 10), cv::FONT_HERSHEY_SIMPLEX,
-                                0.5, cv::Scalar(0, 255, 0), 1);
-                }
+void OnBoundingBoxData(const Camera::BoundingBoxData& bbox_data) {
+    // 바운딩 박스 데이터는 현재 무시
+    (void)bbox_data;
+}
 
-                // 이미지 표시
-                cv::imshow("MORAI Camera", camera_data.image_data);
+void PrintUsage(const char* program_name) {
+    std::cout << "Usage: " << program_name << " <ip_address> <port>" << std::endl;
+    std::cout << "Example: " << program_name << " 127.0.0.1 7777" << std::endl;
+}
 
-                // 'q' 키를 누르면 종료
-                if (cv::waitKey(1) == 'q')
-                {
-                    break;
-                }
-            }
-            else
-            {
-                std::cout << "No image data" << std::endl;
-                // std::cout << "Camera size: " << camera_data.image_data.size() << std::endl;
+int main(int argc, char* argv[]) {
+#ifndef _WIN32
+    ros::init(argc, argv, "camera_receiver_node");
+    ros::NodeHandle nh("~");
+    image_transport::ImageTransport it(nh);
+
+    std::string ip_address;
+    int port;
+    nh.param<std::string>("ip_address", ip_address, "127.0.0.1");
+    nh.param<int>("port", port, 7777);
+
+    image_pub = it.advertise("/camera_receiver/raw_image", 1);
+#else
+    if (argc != 3) {
+        PrintUsage(argv[0]);
+        return -1;
+    }
+    const std::string ip_address = argv[1];
+    const int port = std::stoi(argv[2]);
+#endif
+
+    try {
+        Camera camera(ip_address, port);
+        std::cout << "UDP Server Info - IP: " << ip_address << ", Port: " << port << std::endl;
+
+        camera.RegisterCameraCallback(OnCameraData);
+        camera.RegisterBoundingBoxCallback(OnBoundingBoxData);  // 바운딩 박스 콜백도 등록
+
+#ifndef _WIN32
+        ros::Rate rate(30); // 30Hz
+        while (ros::ok() && is_running) {
+            ros::spinOnce();
+            rate.sleep();
+        }
+#else
+        while (is_running) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(33)); // ~30Hz
+            if (cv::waitKey(1) == 'q') {
+                is_running = false;
             }
         }
-    }
-    catch (const std::exception& e)
-    {
+#endif
+
+        cv::destroyAllWindows();
+    } catch (const std::exception& e) {
         std::cerr << "Error: " << e.what() << std::endl;
         return -1;
     }
 
-    cv::destroyAllWindows();
     return 0;
 }

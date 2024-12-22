@@ -1,0 +1,30 @@
+<?xml version="1.0"?>
+<launch>
+    <!-- Common Arguments -->
+    <arg name="ip_address" default="172.25.41.111" />
+    <arg name="rviz" default="true" />
+    
+    <!-- Include individual sensor launches -->
+    <include file="$(find morai_cpp_networks)/launch/gps.launch">
+        <arg name="ip_address" value="$(arg ip_address)" />
+    </include>
+
+    <include file="$(find morai_cpp_networks)/launch/imu.launch">
+        <arg name="ip_address" value="$(arg ip_address)" />
+    </include>
+
+    <include file="$(find morai_cpp_networks)/launch/camera.launch">
+        <arg name="ip_address" value="$(arg ip_address)" />
+    </include>
+
+    <include file="$(find morai_cpp_networks)/launch/object_info.launch">
+        <arg name="ip_address" value="$(arg ip_address)" />
+    </include>
+
+    <!-- Launch RViz with configuration -->
+    <node if="$(arg rviz)" 
+          pkg="rviz" 
+          type="rviz" 
+          name="rviz"
+          args="-d $(find morai_cpp_networks)/rviz/morai_sensors.rviz" />
+</launch> 

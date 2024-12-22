@@ -7,6 +7,8 @@
 #include <string>
 #include <thread>
 #include <vector>
+#include <functional>
+#include <iostream>
 
 #include "../network/udp_receiver.hpp"
 
@@ -50,10 +52,8 @@ class VehicleState : public UDPReceiver
      */
     struct Timestamp
     {  // 8 bytes
-#pragma pack(push, 1)
-        uint32_t seconds;      ///< (4 bytes) 경과된 초 단위 시간
-        uint32_t nanoseconds;  ///< (4 bytes) timestamp의 소수 단위 초 (나노초)
-#pragma pack(pop)
+        int32_t seconds;      ///< (4 bytes) 경과된 초 단위 시간
+        int32_t nanoseconds;  ///< (4 bytes) timestamp의 소수 단위 초 (나노초)
     };
 
     /**
@@ -62,11 +62,9 @@ class VehicleState : public UDPReceiver
      */
     struct Vector3
     {
-#pragma pack(push, 1)
         float x;
         float y;
         float z;
-#pragma pack(pop)
     };
 
     /**
@@ -75,7 +73,6 @@ class VehicleState : public UDPReceiver
      */
     struct VehicleData
     {  // 180 bytes
-#pragma pack(push, 1)
         Timestamp timestamp;    ///< (8 bytes) 타임스탬프 정보
         ControlMode ctrl_mode;  ///< (1 byte) 제어 모드
         GearMode gear;          ///< (1 byte) 기어 상태
@@ -84,6 +81,7 @@ class VehicleState : public UDPReceiver
             map_data_id;  ///< (4 bytes) Map data id 값 (0~9999: DigitalTwin, 10000~19999: Virtual)
         float accel_input;                  ///< (4 bytes) 가속 페달 입력값 (0~1)
         float brake_input;                  ///< (4 bytes) 브레이크 페달 입력값 (0~1)
+        // Vector3 size;                       ///< (12 bytes) 차량 크기 (m)
         Vector3 size;                       ///< (12 bytes) 차량 크기 (m)
         float overhang;                     ///< (4 bytes) 전방 오버행
         float wheelbase;                    ///< (4 bytes) 축거
@@ -107,15 +105,13 @@ class VehicleState : public UDPReceiver
         float tire_cornering_stiffness_fr;  ///< (4 bytes) 우측 전방 타이어 코너링 강성 (N/deg)
         float tire_cornering_stiffness_rl;  ///< (4 bytes) 좌측 후방 타이어 코너링 강성 (N/deg)
         float tire_cornering_stiffness_rr;  ///< (4 bytes) 우측 후방 타이어 코너링 강성 (N/deg)
-#pragma pack(pop)
     };
 
     union VehicleStatePacketStruct
     {
-        uint8_t data[PACKET_SIZE];  // 211 bytes
+        char data[PACKET_SIZE];  // 211 bytes
         struct
         {
-#pragma pack(push, 1)
             char sharp;                // 1 byte
             char header[9];            // 9 bytes
             char dollar;               // 1 byte
@@ -123,7 +119,6 @@ class VehicleState : public UDPReceiver
             uint8_t AuxData[12];       // 12 bytes
             VehicleData vehicle_data;  // 180 bytes
             uint8_t tail[2];           // 2 bytes
-#pragma pack(pop)
         } packet;
     };
 
@@ -146,7 +141,21 @@ class VehicleState : public UDPReceiver
      */
     bool GetVehicleState(VehicleData& data);
 
- private:
+    /**
+     * @brief 콜백 함수 타입 정의
+     */
+    using VehicleStateCallback = std::function<void(const VehicleData&)>;
+
+    /**
+     * @brief 콜백 등록 함수
+     * @param callback 콜백 함수
+     */
+    void RegisterCallback(VehicleStateCallback callback) {
+        std::lock_guard<std::mutex> lock(callback_mutex_);
+        vehicle_state_callback_ = callback;
+    }
+
+ public:
     /**
      * @brief UDP 수신 스레드 함수
      */
@@ -162,10 +171,18 @@ class VehicleState : public UDPReceiver
     bool ParseVehicleState(const char* buffer, size_t size, VehicleStatePacketStruct& data);
 
     std::thread thread_vehicle_state_receiver_;  ///< 차량 상태 수신 스레드
-    std::atomic<bool> is_running_;               ///< 스레드 실행 상태
-    std::mutex mutex_vehicle_data_;              ///< 데이터 보호를 위한 뮤텍스
-    VehicleData vehicle_data_;                   ///< 최신 차량 상태 데이터
-    bool is_data_received_;                      ///< 데이터 수신 여부
+    std::mutex callback_mutex_;                   ///< 콜백 함수 보호를 위한 뮤텍스
+    std::atomic<bool> is_running_{false};        ///< 스레드 실행 상태
+    VehicleStatePacketStruct packet_data_;
+    VehicleStateCallback vehicle_state_callback_{[](const VehicleData& data) {
+        std::cout << "Note: Vehicle state data received but no callback is registered.\n"
+                  << "Vehicle Info:\n"
+                  << "\tControl Mode: " << static_cast<int>(data.ctrl_mode) << "\n"
+                  << "\tGear: " << static_cast<int>(data.gear) << "\n"
+                  << "\tVelocity: " << data.signed_velocity << " km/h\n"
+                  << "\tSteering: " << data.steering << " deg\n"
+                  << "Consider registering a callback using RegisterCallback()." << std::endl;
+    }};  ///< 기본 콜백 함수
 };
 
 #endif  // __VEHICLE_STATE_HPP__

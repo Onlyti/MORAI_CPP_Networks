@@ -5,7 +5,7 @@
 #include <iostream>
 
 VehicleState::VehicleState(const std::string& ip_address, uint16_t port)
-    : UDPReceiver(ip_address, port), is_running_(false), is_data_received_(false)
+    : UDPReceiver(ip_address, port), is_running_(false)
 {
     is_running_ = true;
     thread_vehicle_state_receiver_ = std::thread(&VehicleState::ThreadVehicleStateReceiver, this);
@@ -21,19 +21,6 @@ VehicleState::~VehicleState()
     Close();
 }
 
-bool VehicleState::GetVehicleState(VehicleData& data)
-{
-    std::lock_guard<std::mutex> lock(mutex_vehicle_data_);
-    if (!is_data_received_)
-    {
-        return false;
-    }
-
-    data = vehicle_data_;
-    is_data_received_ = false;
-    return true;
-}
-
 void VehicleState::ThreadVehicleStateReceiver()
 {
     char packet_buffer[PACKET_SIZE];
@@ -45,33 +32,17 @@ void VehicleState::ThreadVehicleStateReceiver()
             size_t received_size = 0;
             if (!Receive(packet_buffer, PACKET_SIZE, received_size))
             {
-                std::cout << "received_size: " << received_size << std::endl;
                 std::cerr << "Failed to receive vehicle state data" << std::endl;
                 continue;
             }
-
-            // std::cout << "Packet: ";
-            // for (size_t i = 0; i < received_size; ++i)
-            // {
-            //     std::cout << i << ": " << std::setw(2) << std::setfill('0') << std::hex
-            //               << static_cast<int>(packet_buffer[i]) << std::dec << std::endl;
-            // }
-            // std::cout << std::endl;
-            // continue;
-
-            if (received_size != PACKET_SIZE)
+            
+            memset(&packet_data_, 0, sizeof(VehicleStatePacketStruct));
+            if (ParseVehicleState(packet_buffer, received_size, packet_data_))
             {
-                std::cerr << "Received unexpected packet size: " << received_size
-                          << " (expected: " << PACKET_SIZE << ")" << std::endl;
-                continue;
-            }
-
-            VehicleStatePacketStruct temp_data;
-            if (ParseVehicleState(packet_buffer, received_size, temp_data))
-            {
-                std::lock_guard<std::mutex> lock(mutex_vehicle_data_);
-                memcpy(&vehicle_data_, &temp_data.packet.vehicle_data, sizeof(VehicleData));
-                is_data_received_ = true;
+                std::lock_guard<std::mutex> lock(callback_mutex_);
+                if (vehicle_state_callback_) {
+                    vehicle_state_callback_(packet_data_.packet.vehicle_data);
+                }
             }
         }
         catch (const std::exception& e)
@@ -91,87 +62,134 @@ bool VehicleState::ParseVehicleState(const char* buffer, size_t size, VehicleSta
 
     size_t offset = 0;
 
-    std::memcpy(&data, buffer, sizeof(VehicleStatePacketStruct));
+    // Parse Sharp (1 byte) - "#"
+    std::memcpy(&data.packet.sharp, buffer + offset, sizeof(uint8_t));
+    offset += sizeof(uint8_t);
 
-    // // Parse Timestamp (8 bytes)
-    // std::memcpy(&data.timestamp.seconds, buffer + offset, sizeof(uint32_t));
-    // offset += sizeof(uint32_t);
-    // std::memcpy(&data.timestamp.nanoseconds, buffer + offset, sizeof(uint32_t));
-    // offset += sizeof(uint32_t);
+    // Parse Header (9 bytes) - "MoraiInfo"
+    std::memcpy(&data.packet.header, buffer + offset, sizeof(char[9]));
+    offset += sizeof(char[9]);
 
-    // // Parse Control Mode (1 byte)
-    // uint8_t ctrl_mode;
-    // std::memcpy(&ctrl_mode, buffer + offset, sizeof(uint8_t));
-    // data.ctrl_mode = static_cast<ControlMode>(ctrl_mode);
-    // offset += sizeof(uint8_t);
+    // Parse Dollar (1 byte) - "$"
+    std::memcpy(&data.packet.dollar, buffer + offset, sizeof(uint8_t));
+    offset += sizeof(uint8_t);
 
-    // // Parse Gear (1 byte)
-    // uint8_t gear;
-    // std::memcpy(&gear, buffer + offset, sizeof(uint8_t));
-    // data.gear = static_cast<GearMode>(gear);
-    // offset += sizeof(uint8_t);
+    // Parse Length (4 bytes)
+    std::memcpy(&data.packet.length, buffer + offset, sizeof(uint32_t));
+    offset += sizeof(uint32_t);
 
-    // // Parse Signed Velocity (4 bytes)
-    // std::memcpy(&data.signed_velocity, buffer + offset, sizeof(float));
-    // offset += sizeof(float);
+    // Parse Aux Data (12 bytes)
+    std::memcpy(&data.packet.AuxData, buffer + offset, sizeof(uint8_t[12]));
+    offset += sizeof(uint8_t[12]);
 
-    // // Parse Map Data ID (4 bytes)
-    // std::memcpy(&data.map_data_id, buffer + offset, sizeof(int32_t));
-    // offset += sizeof(int32_t);
+    // Parse Vehicle - Timestamp
+    std::memcpy(&data.packet.vehicle_data.timestamp.seconds, buffer + offset, sizeof(uint32_t));
+    offset += sizeof(uint32_t);
+    std::memcpy(&data.packet.vehicle_data.timestamp.nanoseconds, buffer + offset, sizeof(uint32_t));
+    offset += sizeof(uint32_t);
 
-    // // Parse Accel Input (4 bytes)
-    // std::memcpy(&data.accel_input, buffer + offset, sizeof(float));
-    // offset += sizeof(float);
+    // Parse Vehicle - Control Mode
+    std::memcpy(&data.packet.vehicle_data.ctrl_mode, buffer + offset, sizeof(uint8_t));
+    offset += sizeof(uint8_t);
 
-    // // Parse Brake Input (4 bytes)
-    // std::memcpy(&data.brake_input, buffer + offset, sizeof(float));
-    // offset += sizeof(float);
+    // Parse Vehicle - Gear
+    std::memcpy(&data.packet.vehicle_data.gear, buffer + offset, sizeof(uint8_t));
+    offset += sizeof(uint8_t);
 
-    // // Parse Size XYZ (12 bytes)
-    // std::memcpy(&data.size, buffer + offset, sizeof(Vector3));
-    // offset += sizeof(Vector3);
+    // Parse Vehicle - Signed Velocity
+    std::memcpy(&data.packet.vehicle_data.signed_velocity, buffer + offset, sizeof(float));
+    offset += sizeof(float);
 
-    // // Parse Overhang (4 bytes)
-    // std::memcpy(&data.overhang, buffer + offset, sizeof(float));
-    // offset += sizeof(float);
+    // Parse Vehicle - Map Data ID
+    std::memcpy(&data.packet.vehicle_data.map_data_id, buffer + offset, sizeof(int32_t));
+    offset += sizeof(int32_t);
 
-    // // Parse Wheelbase (4 bytes)
-    // std::memcpy(&data.wheelbase, buffer + offset, sizeof(float));
-    // offset += sizeof(float);
+    // Parse Vehicle - Accel Input
+    std::memcpy(&data.packet.vehicle_data.accel_input, buffer + offset, sizeof(float));
+    offset += sizeof(float);
 
-    // // Parse Rear Overhang (4 bytes)
-    // std::memcpy(&data.rear_overhang, buffer + offset, sizeof(float));
-    // offset += sizeof(float);
+    // Parse Vehicle - Brake Input  
+    std::memcpy(&data.packet.vehicle_data.brake_input, buffer + offset, sizeof(float));
+    offset += sizeof(float);
 
-    // // Parse Position XYZ (12 bytes)
-    // std::memcpy(&data.position, buffer + offset, sizeof(Vector3));
-    // offset += sizeof(Vector3);
+    // Parse Vehicle - Size XYZ
+    std::memcpy(&data.packet.vehicle_data.size, buffer + offset, sizeof(Vector3));
+    offset += sizeof(Vector3);
 
-    // // Parse Rotation (Roll/Pitch/Heading) (12 bytes)
-    // std::memcpy(&data.rotation, buffer + offset, sizeof(Vector3));
-    // offset += sizeof(Vector3);
+    // Parse Vehicle - Overhang
+    std::memcpy(&data.packet.vehicle_data.overhang, buffer + offset, sizeof(float));
+    offset += sizeof(float);
 
-    // // Parse Velocity XYZ (12 bytes)
-    // std::memcpy(&data.velocity, buffer + offset, sizeof(Vector3));
-    // offset += sizeof(Vector3);
+    // Parse Vehicle - Wheelbase
+    std::memcpy(&data.packet.vehicle_data.wheelbase, buffer + offset, sizeof(float));
+    offset += sizeof(float);
 
-    // // Parse Angular Velocity XYZ (12 bytes)
-    // std::memcpy(&data.angular_velocity, buffer + offset, sizeof(Vector3));
-    // offset += sizeof(Vector3);
+    // Parse Vehicle - Rear Overhang
+    std::memcpy(&data.packet.vehicle_data.rear_overhang, buffer + offset, sizeof(float));
+    offset += sizeof(float);
 
-    // // Parse Acceleration XYZ (12 bytes)
-    // std::memcpy(&data.acceleration, buffer + offset, sizeof(Vector3));
-    // offset += sizeof(Vector3);
+    // Parse Vehicle - Position
+    std::memcpy(&data.packet.vehicle_data.position, buffer + offset, sizeof(Vector3));
+    offset += sizeof(Vector3);
 
-    // // Parse Steering (4 bytes)
-    // std::memcpy(&data.steering, buffer + offset, sizeof(float));
-    // offset += sizeof(float);
+    // Parse Vehicle - Rotation
+    std::memcpy(&data.packet.vehicle_data.rotation, buffer + offset, sizeof(Vector3));
+    offset += sizeof(Vector3);
 
-    // // Parse MGeo Link ID (38 bytes)
-    // char link_id[39] = {0};  // +1 for null terminator
-    // std::memcpy(link_id, buffer + offset, 38);
-    // data.mgeo_link_id = std::string(link_id);
-    // offset += 38;
+    // Parse Vehicle - Velocity
+    std::memcpy(&data.packet.vehicle_data.velocity, buffer + offset, sizeof(Vector3));
+    offset += sizeof(Vector3);
+
+    // Parse Vehicle - Angular Velocity
+    std::memcpy(&data.packet.vehicle_data.angular_velocity, buffer + offset, sizeof(Vector3));
+    offset += sizeof(Vector3);
+
+    // Parse Vehicle - Acceleration
+    std::memcpy(&data.packet.vehicle_data.acceleration, buffer + offset, sizeof(Vector3));
+    offset += sizeof(Vector3);
+
+    // Parse Vehicle - Steering
+    std::memcpy(&data.packet.vehicle_data.steering, buffer + offset, sizeof(float));
+    offset += sizeof(float);
+
+    // Parse Vehicle - MGeo Link ID
+    std::memcpy(&data.packet.vehicle_data.mgeo_link_id, buffer + offset, sizeof(char[38]));
+    offset += sizeof(char[38]);
+
+    // Parse Vehicle - Tire Lateral Forces
+    std::memcpy(&data.packet.vehicle_data.tire_lateral_force_fl, buffer + offset, sizeof(float));
+    offset += sizeof(float);
+    std::memcpy(&data.packet.vehicle_data.tire_lateral_force_fr, buffer + offset, sizeof(float));
+    offset += sizeof(float);
+    std::memcpy(&data.packet.vehicle_data.tire_lateral_force_rl, buffer + offset, sizeof(float));
+    offset += sizeof(float);
+    std::memcpy(&data.packet.vehicle_data.tire_lateral_force_rr, buffer + offset, sizeof(float));
+    offset += sizeof(float);
+
+    // Parse Vehicle - Side Slip Angles
+    std::memcpy(&data.packet.vehicle_data.side_slip_angle_fl, buffer + offset, sizeof(float));
+    offset += sizeof(float);
+    std::memcpy(&data.packet.vehicle_data.side_slip_angle_fr, buffer + offset, sizeof(float));
+    offset += sizeof(float);
+    std::memcpy(&data.packet.vehicle_data.side_slip_angle_rl, buffer + offset, sizeof(float));
+    offset += sizeof(float);
+    std::memcpy(&data.packet.vehicle_data.side_slip_angle_rr, buffer + offset, sizeof(float));
+    offset += sizeof(float);
+
+    // Parse Vehicle - Tire Cornering Stiffness
+    std::memcpy(&data.packet.vehicle_data.tire_cornering_stiffness_fl, buffer + offset, sizeof(float));
+    offset += sizeof(float);
+    std::memcpy(&data.packet.vehicle_data.tire_cornering_stiffness_fr, buffer + offset, sizeof(float));
+    offset += sizeof(float);
+    std::memcpy(&data.packet.vehicle_data.tire_cornering_stiffness_rl, buffer + offset, sizeof(float));
+    offset += sizeof(float);
+    std::memcpy(&data.packet.vehicle_data.tire_cornering_stiffness_rr, buffer + offset, sizeof(float));
+    offset += sizeof(float);
+
+    // Parse Tail (2 bytes)
+    std::memcpy(&data.packet.tail, buffer + offset, sizeof(uint8_t[2]));
+    offset += sizeof(uint8_t[2]);
+
 
     return true;
 }
