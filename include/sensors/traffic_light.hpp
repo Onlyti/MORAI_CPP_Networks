@@ -3,6 +3,9 @@
 #include <mutex>
 #include <string>
 #include <thread>
+#include <functional>
+#include <iostream>
+#include <atomic>
 
 #include "network/udp_receiver.hpp"
 
@@ -15,6 +18,9 @@ public:
         int16_t traffic_light_type;   // 신호등 종류
         int16_t traffic_light_status; // 신호 상태
     };
+
+    // 콜백 함수 타입 정의
+    using TrafficLightCallback = std::function<void(const TrafficLightData&)>;
 
 #pragma pack(push, 1)
     struct TrafficLightPacket {
@@ -36,17 +42,23 @@ public:
     TrafficLight(const std::string& ip_address, uint16_t port);
     virtual ~TrafficLight();
 
-    bool GetTrafficLightState(TrafficLightData& data);
+    // 콜백 등록 함수
+    void RegisterCallback(TrafficLightCallback callback) {
+        std::lock_guard<std::mutex> lock(callback_mutex_);
+        traffic_light_callback_ = callback;
+    }
 
 private:
     void ThreadTrafficLightReceiver();
     bool ParseTrafficLight(const char* buffer, size_t size, TrafficLightPacketStruct& data);
 
     std::thread thread_traffic_light_receiver_;
-    std::mutex mutex_traffic_light_data_;
-    bool is_running_;
-    bool is_data_received_;
+    std::mutex callback_mutex_;
+    std::atomic<bool> is_running_{false};
 
     TrafficLightPacketStruct packet_data_;
-    TrafficLightData traffic_light_data_;
+    TrafficLightCallback traffic_light_callback_{[](const TrafficLightData& data) {
+        std::cout << "Note: Traffic light data received but no callback is registered. "
+                  << "Consider registering a callback using RegisterCallback()." << std::endl;
+    }};
 };

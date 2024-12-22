@@ -7,6 +7,8 @@
 #include <string>
 #include <thread>
 #include <vector>
+#include <functional>
+#include <iostream>
 
 #include "../network/udp_receiver.hpp"
 
@@ -139,6 +141,20 @@ class VehicleState : public UDPReceiver
      */
     bool GetVehicleState(VehicleData& data);
 
+    /**
+     * @brief 콜백 함수 타입 정의
+     */
+    using VehicleStateCallback = std::function<void(const VehicleData&)>;
+
+    /**
+     * @brief 콜백 등록 함수
+     * @param callback 콜백 함수
+     */
+    void RegisterCallback(VehicleStateCallback callback) {
+        std::lock_guard<std::mutex> lock(callback_mutex_);
+        vehicle_state_callback_ = callback;
+    }
+
  public:
     /**
      * @brief UDP 수신 스레드 함수
@@ -155,11 +171,18 @@ class VehicleState : public UDPReceiver
     bool ParseVehicleState(const char* buffer, size_t size, VehicleStatePacketStruct& data);
 
     std::thread thread_vehicle_state_receiver_;  ///< 차량 상태 수신 스레드
-    std::atomic<bool> is_running_;               ///< 스레드 실행 상태
-    std::mutex mutex_vehicle_data_;              ///< 데이터 보호를 위한 뮤텍스
-    VehicleData vehicle_data_;                   ///< 최신 차량 상태 데이터
+    std::mutex callback_mutex_;                   ///< 콜백 함수 보호를 위한 뮤텍스
+    std::atomic<bool> is_running_{false};        ///< 스레드 실행 상태
     VehicleStatePacketStruct packet_data_;
-    bool is_data_received_;                      ///< 데이터 수신 여부
+    VehicleStateCallback vehicle_state_callback_{[](const VehicleData& data) {
+        std::cout << "Note: Vehicle state data received but no callback is registered.\n"
+                  << "Vehicle Info:\n"
+                  << "\tControl Mode: " << static_cast<int>(data.ctrl_mode) << "\n"
+                  << "\tGear: " << static_cast<int>(data.gear) << "\n"
+                  << "\tVelocity: " << data.signed_velocity << " km/h\n"
+                  << "\tSteering: " << data.steering << " deg\n"
+                  << "Consider registering a callback using RegisterCallback()." << std::endl;
+    }};  ///< 기본 콜백 함수
 };
 
 #endif  // __VEHICLE_STATE_HPP__

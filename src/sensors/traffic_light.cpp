@@ -5,7 +5,7 @@
 #include <thread>
 
 TrafficLight::TrafficLight(const std::string& ip_address, uint16_t port)
-    : UDPReceiver(ip_address, port), is_running_(false), is_data_received_(false) {
+    : UDPReceiver(ip_address, port), is_running_(false) {
     is_running_ = true;
     thread_traffic_light_receiver_ = std::thread(&TrafficLight::ThreadTrafficLightReceiver, this);
 }
@@ -16,17 +16,6 @@ TrafficLight::~TrafficLight() {
         thread_traffic_light_receiver_.join();
     }
     Close();
-}
-
-bool TrafficLight::GetTrafficLightState(TrafficLightData& data) {
-    std::lock_guard<std::mutex> lock(mutex_traffic_light_data_);
-    if (!is_data_received_) {
-        return false;
-    }
-
-    data = traffic_light_data_;
-    is_data_received_ = false;
-    return true;
 }
 
 void TrafficLight::ThreadTrafficLightReceiver() {
@@ -40,17 +29,12 @@ void TrafficLight::ThreadTrafficLightReceiver() {
                 continue;
             }
 
-            if (received_size != PACKET_SIZE) {
-                std::cerr << "Received unexpected packet size: " << received_size << " (expected: " << PACKET_SIZE
-                          << ")" << std::endl;
-                continue;
-            }
-
             memset(&packet_data_, 0, sizeof(TrafficLightPacketStruct));
             if (ParseTrafficLight(packet_buffer, received_size, packet_data_)) {
-                std::lock_guard<std::mutex> lock(mutex_traffic_light_data_);
-                memcpy(&traffic_light_data_, &packet_data_.packet.traffic_light_data, sizeof(TrafficLightData));
-                is_data_received_ = true;
+                std::lock_guard<std::mutex> lock(callback_mutex_);
+                if (traffic_light_callback_) {
+                    traffic_light_callback_(packet_data_.packet.traffic_light_data);
+                }
             }
         } catch (const std::exception& e) {
             std::cerr << "Traffic light error: " << e.what() << std::endl;

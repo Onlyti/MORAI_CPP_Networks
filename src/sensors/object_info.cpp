@@ -4,7 +4,7 @@
 #include "sensors/object_info.hpp"
 
 ObjectInfo::ObjectInfo(const std::string& ip_address, uint16_t port)
-    : UDPReceiver(ip_address, port), is_running_(false), is_data_received_(false) {
+    : UDPReceiver(ip_address, port), is_running_(false) {
     is_running_ = true;
     object_data_.reserve(MAX_OBJECTS);
     thread_object_info_receiver_ = std::thread(&ObjectInfo::ThreadObjectInfoReceiver, this);
@@ -18,17 +18,6 @@ ObjectInfo::~ObjectInfo() {
     Close();
 }
 
-bool ObjectInfo::GetObjectInfo(std::vector<ObjectData>& data) {
-    std::lock_guard<std::mutex> lock(mutex_object_data_);
-    if (!is_data_received_) {
-        return false;
-    }
-
-    data = object_data_;
-    is_data_received_ = false;
-    return true;
-}
-
 void ObjectInfo::ThreadObjectInfoReceiver() {
     char packet_buffer[PACKET_SIZE];
 
@@ -40,20 +29,18 @@ void ObjectInfo::ThreadObjectInfoReceiver() {
                 continue;
             }
 
-            if (received_size != PACKET_SIZE) {
-                std::cerr << "Received unexpected packet size: " << received_size << " (expected: " << PACKET_SIZE
-                          << ")" << std::endl;
-                continue;
-            }
-
             memset(&packet_data_, 0, sizeof(ObjectInfoPacketStruct));
             if (ParseObjectInfo(packet_buffer, received_size, packet_data_)) {
-                std::lock_guard<std::mutex> lock(mutex_object_data_);
-                object_data_.clear();
+                std::vector<ObjectData> temp_data;
+                temp_data.clear();
                 for (size_t i = 0; i < MAX_OBJECTS; ++i) {
-                    object_data_.push_back(packet_data_.packet.objects[i]);
+                    temp_data.push_back(packet_data_.packet.objects[i]);
                 }
-                is_data_received_ = true;
+
+                std::lock_guard<std::mutex> lock(callback_mutex_);
+                if (object_callback_) {
+                    object_callback_(temp_data);
+                }
             }
         } catch (const std::exception& e) {
             std::cerr << "Object info error: " << e.what() << std::endl;

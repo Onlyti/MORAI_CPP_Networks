@@ -54,7 +54,7 @@ void Camera::ThreadCameraUdpReceiver() {
 
                         // 콜백 호출
                         std::lock_guard<std::mutex> callback_lock(callback_mutex_);
-                        if (camera_callback_) {
+                        if (camera_callback_) { // 콜백이 등록되어 있으면 호출
                             camera_callback_(temp_data);
                         }
                     }
@@ -70,7 +70,7 @@ void Camera::ThreadCameraUdpReceiver() {
 
                 // 콜백 호출
                 std::lock_guard<std::mutex> callback_lock(callback_mutex_);
-                if (bbox_callback_) {
+                if (bbox_callback_) { // 콜백이 등록되어 있으면 호출
                     bbox_callback_(temp_data);
                 }
             }

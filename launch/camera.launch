@@ -18,11 +18,4 @@
           type="rqt_image_view" 
           name="image_viewer"
           args="/camera_receiver/raw_image" />
-
-    <!-- RViz for visualization -->
-    <!-- <node pkg="rviz" 
-          type="rviz" 
-          name="rviz" 
-          args="-d $(find morai_cpp_networks)/rviz/camera_view.rviz"
-          required="false" /> -->
 </launch> 

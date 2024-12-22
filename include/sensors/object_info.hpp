@@ -4,6 +4,9 @@
 #include <string>
 #include <thread>
 #include <vector>
+#include <functional>
+#include <iostream>
+#include <atomic>
 
 #include "network/udp_receiver.hpp"
 
@@ -53,10 +56,18 @@ public:
         char buffer[sizeof(ObjectInfoPacket)];
     };
 
+    // 콜백 함수 타입 정의
+    using ObjectInfoCallback = std::function<void(const std::vector<ObjectData>&)>;
+
     ObjectInfo(const std::string& ip_address, uint16_t port);
     virtual ~ObjectInfo();
 
-    bool GetObjectInfo(std::vector<ObjectData>& data);
+    // 콜백 등록 함수
+    void RegisterCallback(ObjectInfoCallback callback)
+    {
+        std::lock_guard<std::mutex> lock(callback_mutex_);
+        object_callback_ = callback;
+    }
 
     // Object type constants
     static constexpr int16_t TYPE_EGO = -1;
@@ -69,10 +80,14 @@ private:
     bool ParseObjectInfo(const char* buffer, size_t size, ObjectInfoPacketStruct& data);
 
     std::thread thread_object_info_receiver_;
-    std::mutex mutex_object_data_;
-    bool is_running_;
+    std::mutex callback_mutex_;
+    std::atomic<bool> is_running_{false};
     bool is_data_received_;
 
     ObjectInfoPacketStruct packet_data_;
     std::vector<ObjectData> object_data_;
+    ObjectInfoCallback object_callback_{[](const std::vector<ObjectData>& data) {
+        std::cout << "Note: Object info received but no callback is registered. "
+                  << "Consider registering a callback using RegisterCallback()." << std::endl;
+    }};
 };

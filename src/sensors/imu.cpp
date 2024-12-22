@@ -50,18 +50,14 @@ void IMU::ThreadIMUUdpReceiver()
             continue;
         }
 
-        // if (received_size != PACKET_SIZE)
-        // {
-        //     std::cerr << "Invalid packet size: " << received_size << " (expected: " << PACKET_SIZE << ")" << std::endl;
-        //     continue;
-        // }
-
         IMUData temp_data;
         if (ParseIMUData(packet_buffer, received_size, temp_data))
         {
-            std::lock_guard<std::mutex> lock(mutex_imu_data_);
-            imu_data_ = std::move(temp_data);
-            is_imu_data_received_ = true;
+            std::lock_guard<std::mutex> lock(callback_mutex_);
+            if (imu_callback_)
+            {
+                imu_callback_(temp_data);
+            }
         }
     }
 }

@@ -5,7 +5,7 @@
 #include <iostream>
 
 VehicleState::VehicleState(const std::string& ip_address, uint16_t port)
-    : UDPReceiver(ip_address, port), is_running_(false), is_data_received_(false)
+    : UDPReceiver(ip_address, port), is_running_(false)
 {
     is_running_ = true;
     thread_vehicle_state_receiver_ = std::thread(&VehicleState::ThreadVehicleStateReceiver, this);
@@ -21,19 +21,6 @@ VehicleState::~VehicleState()
     Close();
 }
 
-bool VehicleState::GetVehicleState(VehicleData& data)
-{
-    std::lock_guard<std::mutex> lock(mutex_vehicle_data_);
-    if (!is_data_received_)
-    {
-        return false;
-    }
-
-    data = vehicle_data_;
-    is_data_received_ = false;
-    return true;
-}
-
 void VehicleState::ThreadVehicleStateReceiver()
 {
     char packet_buffer[PACKET_SIZE];
@@ -45,26 +32,17 @@ void VehicleState::ThreadVehicleStateReceiver()
             size_t received_size = 0;
             if (!Receive(packet_buffer, PACKET_SIZE, received_size))
             {
-                std::cout << "received_size: " << received_size << std::endl;
                 std::cerr << "Failed to receive vehicle state data" << std::endl;
-                continue;
-            }
-
-            if (received_size != PACKET_SIZE)
-            {
-                std::cerr << "Received unexpected packet size: " << received_size
-                          << " (expected: " << PACKET_SIZE << ")" << std::endl;
                 continue;
             }
             
             memset(&packet_data_, 0, sizeof(VehicleStatePacketStruct));
             if (ParseVehicleState(packet_buffer, received_size, packet_data_))
             {
-                // std::lock_guard<std::mutex> lock(mutex_vehicle_data_);
-                mutex_vehicle_data_.lock();
-                memcpy(&vehicle_data_, &packet_data_.packet.vehicle_data, sizeof(VehicleData));
-                is_data_received_ = true;
-                mutex_vehicle_data_.unlock();
+                std::lock_guard<std::mutex> lock(callback_mutex_);
+                if (vehicle_state_callback_) {
+                    vehicle_state_callback_(packet_data_.packet.vehicle_data);
+                }
             }
         }
         catch (const std::exception& e)

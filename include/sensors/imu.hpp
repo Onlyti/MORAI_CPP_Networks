@@ -9,6 +9,8 @@
 #include <string>
 #include <thread>
 #include <vector>
+#include <functional>
+#include <iostream>
 
 #include "../network/udp_receiver.hpp"
 
@@ -43,6 +45,9 @@ public:
         double linear_acceleration_z;
     };
 
+    // 콜백 함수 타입 정의
+    using IMUCallback = std::function<void(const IMUData&)>;
+
     IMU() = delete;  // Prevent default constructor
     /**
      * @brief IMU 클래스의 생성자
@@ -74,6 +79,13 @@ public:
      */
     bool GetLatestIMUData(IMUData& data);
 
+    // 콜백 등록 함수
+    void RegisterCallback(IMUCallback callback)
+    {
+        std::lock_guard<std::mutex> lock(callback_mutex_);
+        imu_callback_ = callback;
+    }
+
 private:
     /**
      * @brief UDP 수신 스레드 함수
@@ -95,6 +107,11 @@ private:
     std::mutex mutex_imu_data_;
     IMUData imu_data_;
     bool is_imu_data_received_;
+    std::mutex callback_mutex_;
+    IMUCallback imu_callback_{[](const IMUData& data) {
+        std::cout << "Note: IMU data received but no callback is registered. "
+                  << "Consider registering a callback using RegisterCallback()." << std::endl;
+    }};
 };
 
 #endif  // __IMU_HPP__

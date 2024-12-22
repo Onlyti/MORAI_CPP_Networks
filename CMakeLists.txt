@@ -31,13 +31,24 @@ else()
         image_transport
         sensor_msgs
         visualization_msgs
+        geographic_msgs
+        tf2
+        tf2_ros
     )
     
     # Catkin specific configuration
     catkin_package(
         INCLUDE_DIRS include
-        LIBRARIES ${PROJECT_NAME}
-        CATKIN_DEPENDS roscpp cv_bridge image_transport sensor_msgs visualization_msgs
+        LIBRARIES ${PROJECT_NAME}_network
+        CATKIN_DEPENDS 
+            roscpp 
+            cv_bridge 
+            image_transport 
+            sensor_msgs 
+            visualization_msgs
+            geographic_msgs
+            tf2
+            tf2_ros
         DEPENDS OpenCV
     )
 endif()
@@ -53,15 +64,18 @@ else()
     # Catkin specific configuration
     catkin_package(
         INCLUDE_DIRS include
-        LIBRARIES ${PROJECT_NAME}
+        LIBRARIES ${PROJECT_NAME}_network
         CATKIN_DEPENDS 
             roscpp 
             cv_bridge 
             image_transport 
             sensor_msgs 
             visualization_msgs
+            geographic_msgs
+            tf2
+            tf2_ros
         DEPENDS 
-            system_lib
+            OpenCV
     )
 endif()
 
@@ -119,54 +133,114 @@ else()
 endif()
 
 # IMU receiver
-add_executable(imu_receiver
-    examples/imu_receiver_example.cpp
-    src/sensors/imu.cpp
-)
-target_link_libraries(imu_receiver 
-    ${PROJECT_NAME}_network
-    ${PLATFORM_LIBS}
-)
+if(WIN32)
+    add_executable(imu_receiver
+        examples/imu_receiver_example.cpp
+        src/sensors/imu.cpp
+    )
+    target_link_libraries(imu_receiver 
+        ${PROJECT_NAME}_network
+        ${PLATFORM_LIBS}
+    )
+else()
+    add_executable(imu_receiver_node
+        examples/imu_receiver_example.cpp
+        src/sensors/imu.cpp
+    )
+    target_link_libraries(imu_receiver_node
+        ${PROJECT_NAME}_network
+        ${PLATFORM_LIBS}
+        ${catkin_LIBRARIES}
+    )
+endif()
 
 # GPS receiver
-add_executable(gps_receiver
-    examples/gps_receiver_example.cpp
-    src/sensors/gps.cpp
-)
-target_link_libraries(gps_receiver 
-    ${PROJECT_NAME}_network
-    ${PLATFORM_LIBS}
-)
+if(WIN32)
+    add_executable(gps_receiver
+        examples/gps_receiver_example.cpp
+        src/sensors/gps.cpp
+    )
+    target_link_libraries(gps_receiver 
+        ${PROJECT_NAME}_network
+        ${PLATFORM_LIBS}
+    )
+else()
+    add_executable(gps_receiver_node
+        examples/gps_receiver_example.cpp
+        src/sensors/gps.cpp
+    )
+    target_link_libraries(gps_receiver_node
+        ${PROJECT_NAME}_network
+        ${PLATFORM_LIBS}
+        ${catkin_LIBRARIES}
+    )
+endif()
 
 # Vehicle state receiver
-add_executable(vehicle_state_receiver
-    examples/vehicle_state_receiver_example.cpp
-    src/sensors/vehicle_state.cpp
-)
-target_link_libraries(vehicle_state_receiver 
-    ${PROJECT_NAME}_network
-    ${PLATFORM_LIBS}
-)
+if(WIN32)
+    add_executable(vehicle_state_receiver
+        examples/vehicle_state_receiver_example.cpp
+        src/sensors/vehicle_state.cpp
+    )
+    target_link_libraries(vehicle_state_receiver
+        ${PROJECT_NAME}_network
+        ${PLATFORM_LIBS}
+    )
+else()
+    add_executable(vehicle_state_receiver_node
+        examples/vehicle_state_receiver_example.cpp
+        src/sensors/vehicle_state.cpp
+    )
+    target_link_libraries(vehicle_state_receiver_node
+        ${PROJECT_NAME}_network
+        ${PLATFORM_LIBS}
+        ${catkin_LIBRARIES}
+    )
+endif()
 
 # Traffic Light receiver
-add_executable(traffic_light_receiver
-    examples/traffic_light_receiver_example.cpp
-    src/sensors/traffic_light.cpp
-)
-target_link_libraries(traffic_light_receiver 
-    ${PROJECT_NAME}_network
-    ${PLATFORM_LIBS}
-)
+if(WIN32)
+    add_executable(traffic_light_receiver
+        examples/traffic_light_receiver_example.cpp
+        src/sensors/traffic_light.cpp
+    )
+    target_link_libraries(traffic_light_receiver 
+        ${PROJECT_NAME}_network
+        ${PLATFORM_LIBS}
+    )
+else()
+    add_executable(traffic_light_receiver_node
+        examples/traffic_light_receiver_example.cpp
+        src/sensors/traffic_light.cpp
+    )
+    target_link_libraries(traffic_light_receiver_node
+        ${PROJECT_NAME}_network
+        ${PLATFORM_LIBS}
+        ${catkin_LIBRARIES}
+    )
+endif()
 
 # Object Info receiver
-add_executable(object_info_receiver
-    examples/object_info_receiver_example.cpp
-    src/sensors/object_info.cpp
-)
-target_link_libraries(object_info_receiver 
-    ${PROJECT_NAME}_network
-    ${PLATFORM_LIBS}
-)
+if(WIN32)
+    add_executable(object_info_receiver
+        examples/object_info_receiver_example.cpp
+        src/sensors/object_info.cpp
+    )
+    target_link_libraries(object_info_receiver
+        ${PROJECT_NAME}_network
+        ${PLATFORM_LIBS}
+    )
+else()
+    add_executable(object_info_receiver_node
+        examples/object_info_receiver_example.cpp
+        src/sensors/object_info.cpp
+    )
+    target_link_libraries(object_info_receiver_node
+        ${PROJECT_NAME}_network
+        ${PLATFORM_LIBS}
+        ${catkin_LIBRARIES}
+    )
+endif()
 
 # Ego Control Example
 add_executable(ego_control_example
@@ -214,12 +288,12 @@ else()
         basic_receiver 
         basic_sender
         camera_receiver_node
-        imu_receiver
-        gps_receiver
-        vehicle_state_receiver
+        imu_receiver_node
+        gps_receiver_node
+        vehicle_state_receiver_node
         ego_control_example
-        traffic_light_receiver
-        object_info_receiver
+        traffic_light_receiver_node
+        object_info_receiver_node
         RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
         LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
     )
@@ -228,5 +302,11 @@ else()
     install(DIRECTORY launch/
         DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/launch
         FILES_MATCHING PATTERN "*.launch"
+    )
+
+    # Install RViz config files
+    install(DIRECTORY rviz/
+        DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/rviz
+        FILES_MATCHING PATTERN "*.rviz"
     )
 endif()

@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<launch>
+    <!-- Arguments -->
+    <arg name="ip_address" default="172.25.41.111" />
+    <arg name="port" default="7505" />
+    
+    <!-- Object Info receiver node -->
+    <node pkg="morai_cpp_networks" 
+          type="object_info_receiver_node" 
+          name="object_info_receiver" 
+          output="screen">
+        <param name="ip_address" value="$(arg ip_address)" />
+        <param name="port" value="$(arg port)" />
+    </node>
+</launch> 
