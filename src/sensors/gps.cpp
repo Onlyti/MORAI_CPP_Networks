@@ -1,4 +1,5 @@
 #include "sensors/gps.hpp"
+#include <cstring>
 #include <iostream>
 #include <sstream>
 #include <iomanip>
@@ -7,7 +8,6 @@ GPS::GPS(const std::string& ip_address, uint16_t port)
     : UDPReceiver(ip_address, port), is_running_(false)
 {
     is_running_ = true;
-    is_gps_data_received_ = false;
     thread_gps_udp_receiver_ = std::thread(&GPS::ThreadGPSUdpReceiver, this);
     thread_gps_udp_receiver_.detach();
 }
@@ -20,23 +20,6 @@ GPS::~GPS()
         thread_gps_udp_receiver_.join();
     }
     Close();
-}
-
-bool GPS::GetGPSData(GPSData& data)
-{
-    if (!is_gps_data_received_)
-    {
-        return false;
-    }
-    is_gps_data_received_ = false;
-    return std::move(GetLatestGPSData(data));
-}
-
-bool GPS::GetLatestGPSData(GPSData& data)
-{
-    std::lock_guard<std::mutex> lock(mutex_gps_data_);
-    data = gps_data_;
-    return data.is_valid;
 }
 
 void GPS::ThreadGPSUdpReceiver()
@@ -60,9 +43,11 @@ void GPS::ThreadGPSUdpReceiver()
             GPSData temp_data;
             if (ParseNMEAString(nmea_string, temp_data))
             {
-                std::lock_guard<std::mutex> lock(mutex_gps_data_);
-                gps_data_ = std::move(temp_data);
-                is_gps_data_received_ = true;
+                std::lock_guard<std::mutex> lock(callback_mutex_);
+                if (gps_callback_)
+                {
+                    gps_callback_(temp_data);
+                }
             }
         }
         catch (const std::exception& e)

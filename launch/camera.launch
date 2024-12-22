@@ -1,0 +1,21 @@
+<?xml version="1.0"?>
+<launch>
+    <!-- Arguments -->
+    <arg name="ip_address" default="172.25.41.111" />
+    <arg name="port" default="1231" />
+    
+    <!-- Camera receiver node -->
+    <node pkg="morai_cpp_networks" 
+          type="camera_receiver_node" 
+          name="camera_receiver" 
+          output="screen">
+        <param name="ip_address" value="$(arg ip_address)" />
+        <param name="port" value="$(arg port)" />
+    </node>
+
+    <!-- Image viewer -->
+    <node pkg="rqt_image_view" 
+          type="rqt_image_view" 
+          name="image_viewer"
+          args="/camera_receiver/raw_image" />
+</launch> 

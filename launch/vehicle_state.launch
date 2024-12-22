@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+<launch>
+    <!-- Arguments -->
+    <arg name="ip_address" default="172.25.41.111" />
+    <arg name="port" default="9909" />
+    <arg name="rviz" default="false" />
+    
+    <!-- Vehicle State receiver node -->
+    <node pkg="morai_cpp_networks" 
+          type="vehicle_state_receiver_node" 
+          name="vehicle_state_receiver" 
+          output="screen">
+        <param name="ip_address" value="$(arg ip_address)" />
+        <param name="port" value="$(arg port)" />
+    </node>
+
+    <!-- RViz for visualization -->
+    <node if="$(arg rviz)" 
+          pkg="rviz" 
+          type="rviz" 
+          name="rviz"
+          args="-d $(find morai_cpp_networks)/rviz/vehicle_state.rviz" />
+</launch> 

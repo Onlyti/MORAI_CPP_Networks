@@ -1,6 +1,9 @@
 #pragma once
 #include <string>
 #include <stdexcept>
+#include <thread>
+#include <memory>
+#include <cstring>
 
 #ifdef _WIN32
     #include <winsock2.h>
@@ -24,15 +27,17 @@
 class UDPSender {
 public:
     UDPSender(const std::string& ip, int port);
+    UDPSender(const std::string& ip, int dest_port, int host_port);
     ~UDPSender();
     
-    bool init();
-    bool send(const char* data, size_t size);
-    void close();
+    bool Init();
+    bool Send(const char* data, size_t size);
+    void Close();
 
 private:
     std::string ip_;
-    int port_;
+    int dest_port_;
+    int host_port_;
     SOCKET_TYPE socket_;
     struct sockaddr_in target_addr_;
     bool is_initialized_;

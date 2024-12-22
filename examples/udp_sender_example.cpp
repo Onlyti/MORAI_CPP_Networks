@@ -7,7 +7,7 @@
 int main() {
     UDPSender sender("127.0.0.1", 12345);
     
-    if (!sender.init()) {
+    if (!sender.Init()) {
         std::cerr << "Failed to initialize UDP sender" << std::endl;
         return -1;
     }
@@ -16,7 +16,7 @@ int main() {
     const std::string message = "Hello, UDP!";
     
     while (true) {
-        if (sender.send(message.c_str(), message.length())) {
+        if (sender.Send(message.c_str(), message.length())) {
             std::cout << "Sent: " << message << std::endl;
         }
         
