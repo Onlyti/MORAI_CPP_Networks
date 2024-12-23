@@ -173,7 +173,7 @@ include(FetchContent)
 FetchContent_Declare(
     morai_cpp_networks
     GIT_REPOSITORY https://github.com/Onlyti/morai_cpp_networks.git
-    GIT_TAG main  # 또는 특정 태그/커밋
+    GIT_TAG CoreLib
 )
 FetchContent_MakeAvailable(morai_cpp_networks)
 
