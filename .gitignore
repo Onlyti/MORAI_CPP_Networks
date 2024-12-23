@@ -1,1 +1,5 @@
+# Ignore build directory
 /build
+
+# Ignore cmake directory
+/cmake
