@@ -23,6 +23,34 @@ if(WIN32)
     endif()
 else()
     set(PLATFORM_LIBS pthread)
+    
+    # Linux에서만 ROS 관련 설정 추가
+    find_package(catkin REQUIRED COMPONENTS
+        roscpp
+        cv_bridge
+        image_transport
+        sensor_msgs
+        visualization_msgs
+        geographic_msgs
+        tf2
+        tf2_ros
+    )
+    
+    # Catkin specific configuration
+    catkin_package(
+        INCLUDE_DIRS include
+        LIBRARIES ${PROJECT_NAME}_network
+        CATKIN_DEPENDS 
+            roscpp 
+            cv_bridge 
+            image_transport 
+            sensor_msgs 
+            visualization_msgs
+            geographic_msgs
+            tf2
+            tf2_ros
+        DEPENDS OpenCV
+    )
 endif()
 
 # Find OpenCV package
@@ -32,6 +60,23 @@ if(WIN32)
     set(OpenCV_LIBS ${OpenCV_LIBS})
 else()
     set(OpenCV_LIBS ${OpenCV_LIBRARIES})
+    
+    # Catkin specific configuration
+    catkin_package(
+        INCLUDE_DIRS include
+        LIBRARIES ${PROJECT_NAME}_network
+        CATKIN_DEPENDS 
+            roscpp 
+            cv_bridge 
+            image_transport 
+            sensor_msgs 
+            visualization_msgs
+            geographic_msgs
+            tf2
+            tf2_ros
+        DEPENDS 
+            OpenCV
+    )
 endif()
 
 # Eigen
@@ -64,66 +109,209 @@ target_link_libraries(${PROJECT_NAME}_network
     ${PLATFORM_LIBS}
 )
 
-# Sensor library sources
-add_library(${PROJECT_NAME}_sensor
-    src/sensors/camera.cpp
-    src/sensors/gps.cpp
-    src/sensors/imu.cpp
-    src/sensors/object_info.cpp
-    src/sensors/traffic_light.cpp
-    src/sensors/vehicle_state.cpp
+# Basic examples
+add_executable(basic_receiver examples/example_udp_receiver.cpp)
+target_link_libraries(basic_receiver ${PROJECT_NAME}_network ${PLATFORM_LIBS})
+    
+add_executable(basic_sender examples/example_udp_sender.cpp)
+target_link_libraries(basic_sender ${PROJECT_NAME}_network ${PLATFORM_LIBS})
+
+# Camera receiver
+if(WIN32)
+    add_executable(camera_receiver
+        examples/example_ros_camera_receiver.cpp
+        src/sensors/camera.cpp
+    )
+    target_link_libraries(camera_receiver
+        ${PROJECT_NAME}_network
+        ${OpenCV_LIBS}
+        ${PLATFORM_LIBS}
+    )
+else()
+    # Linux에서는 ROS 노드로 빌
+    add_executable(camera_receiver_node
+        examples/example_ros_camera_receiver.cpp
+        src/sensors/camera.cpp
+    )
+    target_link_libraries(camera_receiver_node
+        ${PROJECT_NAME}_network
+        ${OpenCV_LIBS}
+        ${catkin_LIBRARIES}
+        ${PLATFORM_LIBS}
+    )
+endif()
+
+# IMU receiver
+if(WIN32)
+    add_executable(imu_receiver
+        examples/example_ros_imu_receiver.cpp
+        src/sensors/imu.cpp
+    )
+    target_link_libraries(imu_receiver 
+        ${PROJECT_NAME}_network
+        ${PLATFORM_LIBS}
+    )
+else()
+    add_executable(imu_receiver_node
+        examples/example_ros_imu_receiver.cpp
+        src/sensors/imu.cpp
+    )
+    target_link_libraries(imu_receiver_node
+        ${PROJECT_NAME}_network
+        ${PLATFORM_LIBS}
+        ${catkin_LIBRARIES}
+    )
+endif()
+
+# GPS receiver
+if(WIN32)
+    add_executable(gps_receiver
+        examples/example_ros_gps_receiver.cpp
+        src/sensors/gps.cpp
+    )
+    target_link_libraries(gps_receiver 
+        ${PROJECT_NAME}_network
+        ${PLATFORM_LIBS}
+    )
+else()
+    add_executable(gps_receiver_node
+        examples/example_ros_gps_receiver.cpp
+        src/sensors/gps.cpp
+    )
+    target_link_libraries(gps_receiver_node
+        ${PROJECT_NAME}_network
+        ${PLATFORM_LIBS}
+        ${catkin_LIBRARIES}
+    )
+endif()
+
+# Vehicle state receiver
+if(WIN32)
+    add_executable(vehicle_state_receiver
+        examples/example_ros_vehicle_state_receiver.cpp
+        src/sensors/vehicle_state.cpp
+    )
+    target_link_libraries(vehicle_state_receiver
+        ${PROJECT_NAME}_network
+        ${PLATFORM_LIBS}
+    )
+else()
+    add_executable(vehicle_state_receiver_node
+        examples/example_ros_vehicle_state_receiver.cpp
+        src/sensors/vehicle_state.cpp
+    )
+    target_link_libraries(vehicle_state_receiver_node
+        ${PROJECT_NAME}_network
+        ${PLATFORM_LIBS}
+        ${catkin_LIBRARIES}
+    )
+endif()
+
+# Traffic Light receiver
+if(WIN32)
+    add_executable(traffic_light_receiver
+        examples/example_ros_traffic_light_receiver.cpp
+        src/sensors/traffic_light.cpp
+    )
+    target_link_libraries(traffic_light_receiver 
+        ${PROJECT_NAME}_network
+        ${PLATFORM_LIBS}
+    )
+else()
+    add_executable(traffic_light_receiver_node
+        examples/example_ros_traffic_light_receiver.cpp
+        src/sensors/traffic_light.cpp
+    )
+    target_link_libraries(traffic_light_receiver_node
+        ${PROJECT_NAME}_network
+        ${PLATFORM_LIBS}
+        ${catkin_LIBRARIES}
+    )
+endif()
+
+# Object Info receiver
+if(WIN32)
+    add_executable(object_info_receiver
+        examples/example_ros_object_info_receiver.cpp
+        src/sensors/object_info.cpp
+    )
+    target_link_libraries(object_info_receiver
+        ${PROJECT_NAME}_network
+        ${PLATFORM_LIBS}
+    )
+else()
+    add_executable(object_info_receiver_node
+        examples/example_ros_object_info_receiver.cpp
+        src/sensors/object_info.cpp
+    )
+    target_link_libraries(object_info_receiver_node
+        ${PROJECT_NAME}_network
+        ${PLATFORM_LIBS}
+        ${catkin_LIBRARIES}
+    )
+endif()
+
+# Ego Control Example
+add_executable(ego_control_example
+    examples/example_ego_control.cpp
+    src/actuator/ego_ctl.cpp
 )
 
-# 센서 라이브러리에 대한 export 설정 추가
-set_target_properties(${PROJECT_NAME}_sensor PROPERTIES
-    EXPORT_NAME sensor
-)
-
-target_link_libraries(${PROJECT_NAME}_sensor
+target_link_libraries(ego_control_example
+    ${PROJECT_NAME}_network
     ${PLATFORM_LIBS}
-    ${OpenCV_LIBS}
-    ${Eigen3_LIBRARIES}
 )
 
-# Export 타겟 설정
-install(TARGETS ${PROJECT_NAME}_network ${PROJECT_NAME}_sensor
-    EXPORT MoraiCppNetworksTargets
-    LIBRARY DESTINATION lib
-    ARCHIVE DESTINATION lib
-    RUNTIME DESTINATION bin
-    INCLUDES DESTINATION include
-)
+# Debug/Release configuration
+if(MSVC)
+    add_compile_options(
+        $<$<CONFIG:>:/MT>
+        $<$<CONFIG:Debug>:/MTd>
+        $<$<CONFIG:Release>:/MT>
+    )
+else()
+    add_compile_options(-Wall -Wextra)
+endif()
 
-# Set include directory path for applications
+# Set output directory
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
-include(CMakePackageConfigHelpers)
-include(GNUInstallDirs)
+# Installation settings
+if(WIN32)
+    install(TARGETS 
+        ${PROJECT_NAME}_network
+        basic_receiver 
+        basic_sender
+        camera_receiver
+        imu_receiver
+        gps_receiver
+        vehicle_state_receiver
+        ego_control_example
+        traffic_light_receiver
+        object_info_receiver
+        RUNTIME DESTINATION bin
+    )
+else()
+    install(TARGETS 
+        ${PROJECT_NAME}_network
+        basic_receiver 
+        basic_sender
+        camera_receiver_node
+        imu_receiver_node
+        gps_receiver_node
+        vehicle_state_receiver_node
+        ego_control_example
+        traffic_light_receiver_node
+        object_info_receiver_node
+        RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+        LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+    )
 
-# 설치 경로 설정
-set(INCLUDE_INSTALL_DIR ${CMAKE_INSTALL_INCLUDEDIR})
-set(LIB_INSTALL_DIR ${CMAKE_INSTALL_LIBDIR})
-set(CONFIG_INSTALL_DIR ${LIB_INSTALL_DIR}/cmake/MoraiCppNetworks)
-
-# Config 파일 생성
-configure_package_config_file(
-    cmake/MoraiCppNetworksConfig.cmake.in
-    ${CMAKE_CURRENT_BINARY_DIR}/MoraiCppNetworksConfig.cmake
-    INSTALL_DESTINATION ${CONFIG_INSTALL_DIR}
-    PATH_VARS INCLUDE_INSTALL_DIR
-)
-
-# 타겟 export
-install(EXPORT MoraiCppNetworksTargets
-    FILE MoraiCppNetworksTargets.cmake
-    NAMESPACE MoraiCppNetworks::
-    DESTINATION ${CONFIG_INSTALL_DIR}
-)
-
-# Config 파일 설치
-install(FILES
-    ${CMAKE_CURRENT_BINARY_DIR}/MoraiCppNetworksConfig.cmake
-    DESTINATION ${CONFIG_INSTALL_DIR}
-)
+    # Install launch files if they exist
+    install(DIRECTORY launch/
+        DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/launch
+        FILES_MATCHING PATTERN "*.launch"
+    )
 
     # Install RViz config files
     install(DIRECTORY rviz/

@@ -235,7 +235,11 @@ int main(int argc, char** argv)
         VehicleState vehicle_state(ip_address, port);
         vehicle_state.RegisterCallback(OnVehicleState);
         bool is_running = true;
+        #ifndef _WIN32
+        while(ros::ok() && is_running)
+        #else
         while(is_running)
+        #endif
         {
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
             std::cout << "Vehicle State receiver example is running" << std::endl;
