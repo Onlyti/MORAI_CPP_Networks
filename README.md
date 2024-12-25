@@ -130,3 +130,101 @@
 3. 공통 사항:
    - MORAI 시뮬레이터가 실행 중이어야 합니다
    - 네트워크 설정이 올바르게 되어 있어야 합니다 
+
+## 다른 프로젝트에서 사용하기
+
+### 방법 1: 시스템에 설치하여 사용
+
+당신의 프로젝트의 CMakeLists.txt에 다음과 같이 추가하세요:
+
+~~~~ cmake
+# 설치된 패키지 찾기
+find_package(MoraiCppNetworks REQUIRED)
+
+add_executable(your_project main.cpp)
+target_link_libraries(your_project
+    MoraiCppNetworks::network    # 네임스페이스가 있는 타겟 이름 사용
+    MoraiCppNetworks::sensor
+)
+~~~~
+
+설치 방법:
+~~~~ bash
+# 빌드 디렉토리 생성
+mkdir build && cd build
+
+# CMake 구성 및 빌드
+cmake ..
+cmake --build .
+
+# 라이브러리 설치 (Linux의 경우)
+sudo cmake --install .
+
+# 라이브러리 설치 (Windows의 경우 관리자 권한으로 실행)
+cmake --install .
+~~~~
+
+### 방법 2: FetchContent 사용 (CMake 3.11+)
+
+당신의 프로젝트의 CMakeLists.txt에 다음과 같이 추가하세요:
+
+~~~~ cmake
+include(FetchContent)
+FetchContent_Declare(
+    morai_cpp_networks
+    GIT_REPOSITORY https://github.com/Onlyti/morai_cpp_networks.git
+    GIT_TAG CoreLib
+)
+FetchContent_MakeAvailable(morai_cpp_networks)
+
+add_executable(your_project main.cpp)
+target_link_libraries(your_project
+    morai_cpp_networks_network   # 직접 타겟 이름 사용
+    morai_cpp_networks_sensor
+)
+~~~~
+
+### 방법 3: add_subdirectory 사용
+
+1. 먼저 프로젝트를 서브디렉토리로 가져옵니다:
+~~~~ bash
+# 프로젝트 루트 디렉토리에서
+git clone https://github.com/Onlyti/morai_cpp_networks.git external/morai_cpp_networks
+# 또는
+git submodule add https://github.com/Onlyti/morai_cpp_networks.git external/morai_cpp_networks
+~~~~
+
+2. CMakeLists.txt에 다음과 같이 추가하세요:
+~~~~ cmake
+add_subdirectory(external/morai_cpp_networks)
+
+add_executable(your_project main.cpp)
+target_link_libraries(your_project
+    morai_cpp_networks_network   # 직접 타겟 이름 사용
+    morai_cpp_networks_sensor
+)
+~~~~
+
+### 사용 예시
+
+~~~~ cpp
+#include <morai_cpp_networks/network/udp_receiver.hpp>
+#include <morai_cpp_networks/sensors/camera.hpp>
+
+int main() {
+    // UDP 수신기 생성
+    morai::network::UdpReceiver receiver("127.0.0.1", 7777);
+    
+    // 카메라 센서 데이터 처리
+    morai::sensors::Camera camera;
+    // ... 사용자 코드 ...
+    
+    return 0;
+}
+~~~~
+
+방법 2와 3의 장점:
+- 시스템 수준 설치가 필요 없음
+- 프로젝트와 함께 버전 관리 가능
+- 빌드 시점에 자동으로 의존성 해결
+~~~~

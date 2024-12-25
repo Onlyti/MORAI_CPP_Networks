@@ -15,8 +15,6 @@
 #include <tf2/LinearMath/Quaternion.h>
 #endif
 
-std::atomic<bool> is_running(true);
-
 // 기어 상태를 문자열로 변환하는 헬퍼 함수
 std::string GearToString(VehicleState::GearMode gear) {
     switch (gear) {
@@ -236,11 +234,11 @@ int main(int argc, char** argv)
         // UDP 수신을 위한 VehicleState 객체 생성
         VehicleState vehicle_state(ip_address, port);
         vehicle_state.RegisterCallback(OnVehicleState);
-
-        while (is_running)
+        bool is_running = true;
+        while(is_running)
         {
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
-            
+            std::cout << "Vehicle State receiver example is running" << std::endl;
             // 'q' 키를 누르면 종료 (Windows에서만 작동)
             #ifdef _WIN32
             if (GetAsyncKeyState('Q') & 0x8000)
@@ -255,6 +253,8 @@ int main(int argc, char** argv)
         std::cerr << "Error: " << e.what() << std::endl;
         return -1;
     }
+
+    std::cout << "Vehicle State receiver example finished" << std::endl;
 
     return 0;
 } 

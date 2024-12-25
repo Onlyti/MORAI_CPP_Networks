@@ -79,10 +79,14 @@ else()
     )
 endif()
 
+# Eigen
+find_package(Eigen3 REQUIRED)
+
 # Include directories
 include_directories(
     ${PROJECT_SOURCE_DIR}/include
     ${OpenCV_INCLUDE_DIRS}
+    ${Eigen3_INCLUDE_DIRS}
 )
 
 # Linux에서만 catkin include 추가
@@ -94,6 +98,11 @@ endif()
 add_library(${PROJECT_NAME}_network
     src/network/udp_receiver.cpp
     src/network/udp_sender.cpp
+)
+
+# 네트워크 라이브러리에 대한 export 설정 추가
+set_target_properties(${PROJECT_NAME}_network PROPERTIES
+    EXPORT_NAME network
 )
 
 target_link_libraries(${PROJECT_NAME}_network
@@ -310,3 +319,69 @@ else()
         FILES_MATCHING PATTERN "*.rviz"
     )
 endif()
+
+# Sensor library sources
+add_library(${PROJECT_NAME}_sensor
+    src/sensors/camera.cpp
+    src/sensors/gps.cpp
+    src/sensors/imu.cpp
+    src/sensors/object_info.cpp
+    src/sensors/traffic_light.cpp
+    src/sensors/vehicle_state.cpp
+)
+
+# 센서 라이브러리에 대한 export 설정 추가
+set_target_properties(${PROJECT_NAME}_sensor PROPERTIES
+    EXPORT_NAME sensor
+)
+
+target_link_libraries(${PROJECT_NAME}_sensor
+    ${PLATFORM_LIBS}
+    ${OpenCV_LIBS}
+    ${Eigen3_LIBRARIES}
+)
+
+# Export 타겟 설정
+install(TARGETS ${PROJECT_NAME}_network ${PROJECT_NAME}_sensor
+    EXPORT MoraiCppNetworksTargets
+    LIBRARY DESTINATION lib
+    ARCHIVE DESTINATION lib
+    RUNTIME DESTINATION bin
+    INCLUDES DESTINATION include
+)
+
+# Set include directory path for applications
+
+include(CMakePackageConfigHelpers)
+include(GNUInstallDirs)
+
+# 설치 경로 설정
+set(INCLUDE_INSTALL_DIR ${CMAKE_INSTALL_INCLUDEDIR})
+set(LIB_INSTALL_DIR ${CMAKE_INSTALL_LIBDIR})
+set(CONFIG_INSTALL_DIR ${LIB_INSTALL_DIR}/cmake/MoraiCppNetworks)
+
+# Config 파일 생성
+configure_package_config_file(
+    cmake/MoraiCppNetworksConfig.cmake.in
+    ${CMAKE_CURRENT_BINARY_DIR}/MoraiCppNetworksConfig.cmake
+    INSTALL_DESTINATION ${CONFIG_INSTALL_DIR}
+    PATH_VARS INCLUDE_INSTALL_DIR
+)
+
+# 타겟 export
+install(EXPORT MoraiCppNetworksTargets
+    FILE MoraiCppNetworksTargets.cmake
+    NAMESPACE MoraiCppNetworks::
+    DESTINATION ${CONFIG_INSTALL_DIR}
+)
+
+# Config 파일 설치
+install(FILES
+    ${CMAKE_CURRENT_BINARY_DIR}/MoraiCppNetworksConfig.cmake
+    DESTINATION ${CONFIG_INSTALL_DIR}
+)
+
+# 헤더 파일 설치
+install(DIRECTORY include/
+    DESTINATION ${INCLUDE_INSTALL_DIR}/morai_cpp_networks
+)
