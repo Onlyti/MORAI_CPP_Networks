@@ -232,8 +232,7 @@ int main(int argc, char** argv)
         std::cout << "Port: " << port << std::endl;
 
         // UDP 수신을 위한 VehicleState 객체 생성
-        VehicleState vehicle_state(ip_address, port);
-        vehicle_state.RegisterCallback(OnVehicleState);
+        VehicleState vehicle_state(ip_address, port, OnVehicleState);
         bool is_running = true;
         #ifndef _WIN32
         while(ros::ok() && is_running)
