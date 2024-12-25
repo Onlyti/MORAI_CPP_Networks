@@ -1,78 +1,64 @@
-#include "sensors/imu.hpp"
 #include <cstring>
 #include <iostream>
+#include "sensors/imu.hpp"
 
-IMU::IMU(const std::string& ip_address, uint16_t port)
-    : UDPReceiver(ip_address, port), is_running_(false)
-{
+IMU::IMU(const std::string& ip_address, uint16_t port) : UDPReceiver(ip_address, port), is_running_(false) {
     is_running_ = true;
     is_imu_data_received_ = false;
     thread_imu_udp_receiver_ = std::thread(&IMU::ThreadIMUUdpReceiver, this);
 }
 
 IMU::IMU(const std::string& ip_address, uint16_t port, IMUCallback callback)
-    : UDPReceiver(ip_address, port), is_running_(false), imu_callback_(callback)
-{
+    : UDPReceiver(ip_address, port), is_running_(false), imu_callback_(callback) {
     std::lock_guard<std::mutex> lock(callback_mutex_);
     imu_callback_ = callback;
     is_running_ = true;
     thread_imu_udp_receiver_ = std::thread(&IMU::ThreadIMUUdpReceiver, this);
 }
 
-IMU::~IMU()
-{
+IMU::~IMU() {
     is_running_ = false;
-    if (thread_imu_udp_receiver_.joinable())
-    {
+    if (thread_imu_udp_receiver_.joinable()) {
         thread_imu_udp_receiver_.join();
     }
     Close();
 }
 
-bool IMU::GetIMUData(IMUData& data)
-{
-    if (!is_imu_data_received_)
-    {
+bool IMU::GetIMUData(IMUData& data) {
+    if (!is_imu_data_received_) {
         return false;
     }
     is_imu_data_received_ = false;
     return GetLatestIMUData(data);
 }
 
-bool IMU::GetLatestIMUData(IMUData& data)
-{
+bool IMU::GetLatestIMUData(IMUData& data) {
     std::lock_guard<std::mutex> lock(mutex_imu_data_);
     data = imu_data_;
     return true;
 }
 
-void IMU::ThreadIMUUdpReceiver()
-{
+void IMU::ThreadIMUUdpReceiver() {
     char packet_buffer[PACKET_SIZE];
 
-    while (is_running_)
-    {
+    while (is_running_) {
         size_t received_size = 0;
-        if (!Receive(packet_buffer, PACKET_SIZE, received_size))
-        {
+        if (!Receive(packet_buffer, PACKET_SIZE, received_size)) {
             std::cerr << "Failed to receive IMU data" << std::endl;
             continue;
         }
 
         IMUData temp_data;
-        if (ParseIMUData(packet_buffer, received_size, temp_data))
-        {
+        if (ParseIMUData(packet_buffer, received_size, temp_data)) {
             std::lock_guard<std::mutex> lock(callback_mutex_);
-            if (imu_callback_)
-            {
+            if (imu_callback_) {
                 imu_callback_(temp_data);
             }
         }
     }
 }
 
-bool IMU::ParseIMUData(const char* buffer, size_t size, IMUData& data)
-{
+bool IMU::ParseIMUData(const char* buffer, size_t size, IMUData& data) {
     // if (size != PACKET_SIZE)
     // {
     //     return false;
@@ -87,7 +73,7 @@ bool IMU::ParseIMUData(const char* buffer, size_t size, IMUData& data)
     offset += 4;
 
     // Skip aux data (12 bytes)
-    offset += 20;  // Actually 20 bytes in protocol
+    offset += 20; // Actually 20 bytes in protocol
 
     // Parse orientation (Quaternion)
     std::memcpy(&data.w, buffer + offset, sizeof(double));
@@ -116,8 +102,7 @@ bool IMU::ParseIMUData(const char* buffer, size_t size, IMUData& data)
     offset += sizeof(double);
 
     // Check tail (2 bytes)
-    if (buffer[size-2] != 0x0D || buffer[size-1] != 0x0A)
-    {
+    if (buffer[size - 2] != 0x0D || buffer[size - 1] != 0x0A) {
         std::cerr << "Invalid tail marker" << std::endl;
         return false;
     }

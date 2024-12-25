@@ -2,13 +2,13 @@
 #define __CAMERA_HPP__
 
 #include <atomic>
+#include <functional>
 #include <memory>
 #include <mutex>
 #include <opencv2/opencv.hpp>
 #include <string>
 #include <thread>
 #include <vector>
-#include <functional>
 
 #include "../network/udp_receiver.hpp"
 
@@ -16,20 +16,18 @@
  * @brief MORAI 시뮬레이터의 카메라 데이터를 수신하고 처리하는 클래스
  * @details UDP를 통해 카메라 이미지와 바운딩 박스 데이터를 수신하고 처리합니다
  */
-class Camera : public UDPReceiver
-{
+class Camera : public UDPReceiver {
     const static size_t MAX_PACKET_SIZE = 65000;
 
 public:
     // Camera Data Type
-    struct CameraPacketHeader  // (19byte)
+    struct CameraPacketHeader // (19byte)
     {
 #pragma pack(push, 1)
         // Header (3byte) - one of "MOR"("Camera"), "BOX"("BoundingBox")
         uint8_t header[3];
         // Timestamp (8byte)
-        struct Timestamp
-        {
+        struct Timestamp {
             uint32_t sec;
             uint32_t nsec;
         } timestamp;
@@ -40,19 +38,16 @@ public:
 #pragma pack(pop)
     };
 
-    struct CameraData
-    {
+    struct CameraData {
         int width;
         int height;
         cv::Mat image_data;
         double timestamp;
     };
 
-    union CameraPacketStruct
-    {
+    union CameraPacketStruct {
         uint8_t data[MAX_PACKET_SIZE] = {0};
-        struct
-        {
+        struct {
 #pragma pack(push, 1)
             CameraPacketHeader header;
             uint8_t data[64979];
@@ -62,48 +57,41 @@ public:
     };
 
     // Bounding Box Data Types
-    struct BoundingBox2D
-    {
+    struct BoundingBox2D {
         float x_min;
         float y_min;
         float x_max;
         float y_max;
     };
 
-    struct BoundingBox3D
-    {
+    struct BoundingBox3D {
         float x;
         float y;
         float z;
     };
 
-    struct BoundingBoxClass
-    {
+    struct BoundingBoxClass {
         uint8_t group_id;
         uint8_t class_id;
         uint8_t sub_class_id;
     };
 
-    struct BoundingBoxData
-    {
+    struct BoundingBoxData {
         std::vector<BoundingBox2D> bbox_2d;
         std::vector<BoundingBox3D> bbox_3d;
         std::vector<BoundingBoxClass> classes;
         double timestamp;
     };
 
-    union BoundingBoxPacketStruct
-    {
+    union BoundingBoxPacketStruct {
         uint8_t data[MAX_PACKET_SIZE] = {0};
-        struct
-        {
+        struct {
 #pragma pack(push, 1)
             CameraPacketHeader header;
-            struct ObjectData
-            {
-                float bbox3d[24];     // 3D BBOX (96byte = 4byte * 3 * 8 points)
-                float bbox2d[4];      // 2D BBOX (16byte = 4byte * 4)
-                uint8_t classTag[3];  // Class/Tag info (3byte)
+            struct ObjectData {
+                float bbox3d[24];    // 3D BBOX (96byte = 4byte * 3 * 8 points)
+                float bbox2d[4];     // 2D BBOX (16byte = 4byte * 4)
+                uint8_t classTag[3]; // Class/Tag info (3byte)
             } object_data[565];
             uint8_t tail[2];
 #pragma pack(pop)
@@ -139,8 +127,7 @@ public:
      * @brief 카메라 데이터 콜백 함수 등록
      * @param callback 카메라 데이터를 처리할 콜백 함수
      */
-    void RegisterCameraCallback(CameraDataCallback callback)
-    {
+    void RegisterCameraCallback(CameraDataCallback callback) {
         std::lock_guard<std::mutex> lock(callback_mutex_);
         camera_callback_ = callback;
     }
@@ -149,8 +136,7 @@ public:
      * @brief 바운딩 박스 데이터 콜백 함수 등록
      * @param callback 바운딩 박스 데이터를 처리할 콜백 함수
      */
-    void RegisterBoundingBoxCallback(BoundingBoxDataCallback callback)
-    {
+    void RegisterBoundingBoxCallback(BoundingBoxDataCallback callback) {
         std::lock_guard<std::mutex> lock(callback_mutex_);
         bbox_callback_ = callback;
     }
@@ -169,7 +155,7 @@ private:
 
     std::thread thread_camera_udp_receiver_;
     std::atomic<bool> is_running_;
-    
+
     // 콜백 관련 멤버 - 기본 콜백으로 초기화
     CameraDataCallback camera_callback_{DefaultCameraCallback};
     BoundingBoxDataCallback bbox_callback_{DefaultBoundingBoxCallback};
@@ -181,4 +167,4 @@ private:
     bool ParseBoundingBoxData(const char* buffer, size_t size, BoundingBoxData& data);
 };
 
-#endif  // __CAMERA_HPP__
+#endif // __CAMERA_HPP__

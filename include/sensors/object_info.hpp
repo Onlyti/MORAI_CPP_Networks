@@ -1,12 +1,12 @@
 #pragma once
 
+#include <atomic>
+#include <functional>
+#include <iostream>
 #include <mutex>
 #include <string>
 #include <thread>
 #include <vector>
-#include <functional>
-#include <iostream>
-#include <atomic>
 
 #include "network/udp_receiver.hpp"
 
@@ -81,8 +81,7 @@ public:
     virtual ~ObjectInfo();
 
     // 콜백 등록 함수
-    void RegisterCallback(ObjectInfoCallback callback)
-    {
+    void RegisterCallback(ObjectInfoCallback callback) {
         std::lock_guard<std::mutex> lock(callback_mutex_);
         object_callback_ = callback;
     }

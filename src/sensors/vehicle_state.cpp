@@ -5,8 +5,7 @@
 #include <iostream>
 
 VehicleState::VehicleState(const std::string& ip_address, uint16_t port)
-    : UDPReceiver(ip_address, port), is_running_(false)
-{
+    : UDPReceiver(ip_address, port), is_running_(false) {
     is_running_ = true;
     thread_vehicle_state_receiver_ = std::thread(&VehicleState::ThreadVehicleStateReceiver, this);
 }
@@ -19,52 +18,41 @@ VehicleState::VehicleState(const std::string& ip_address, uint16_t port, Vehicle
     thread_vehicle_state_receiver_ = std::thread(&VehicleState::ThreadVehicleStateReceiver, this);
 }
 
-VehicleState::~VehicleState()
-{
+VehicleState::~VehicleState() {
     is_running_ = false;
-    if (thread_vehicle_state_receiver_.joinable())
-    {
+    if (thread_vehicle_state_receiver_.joinable()) {
         thread_vehicle_state_receiver_.join();
     }
     Close();
 }
 
-void VehicleState::ThreadVehicleStateReceiver()
-{
+void VehicleState::ThreadVehicleStateReceiver() {
     char packet_buffer[PACKET_SIZE];
 
-    while (is_running_)
-    {
-        try
-        {
+    while (is_running_) {
+        try {
             size_t received_size = 0;
-            if (!Receive(packet_buffer, PACKET_SIZE, received_size))
-            {
+            if (!Receive(packet_buffer, PACKET_SIZE, received_size)) {
                 std::cerr << "Failed to receive vehicle state data" << std::endl;
                 continue;
             }
-            
+
             memset(&packet_data_, 0, sizeof(VehicleStatePacketStruct));
-            if (ParseVehicleState(packet_buffer, received_size, packet_data_))
-            {
+            if (ParseVehicleState(packet_buffer, received_size, packet_data_)) {
                 std::lock_guard<std::mutex> lock(callback_mutex_);
                 if (vehicle_state_callback_) {
                     vehicle_state_callback_(packet_data_.packet.vehicle_data);
                 }
             }
-        }
-        catch (const std::exception& e)
-        {
+        } catch (const std::exception& e) {
             std::cerr << "Vehicle state error: " << e.what() << std::endl;
             continue;
         }
     }
 }
 
-bool VehicleState::ParseVehicleState(const char* buffer, size_t size, VehicleStatePacketStruct& data)
-{
-    if (size != PACKET_SIZE)
-    {
+bool VehicleState::ParseVehicleState(const char* buffer, size_t size, VehicleStatePacketStruct& data) {
+    if (size != PACKET_SIZE) {
         return false;
     }
 
@@ -116,7 +104,7 @@ bool VehicleState::ParseVehicleState(const char* buffer, size_t size, VehicleSta
     std::memcpy(&data.packet.vehicle_data.accel_input, buffer + offset, sizeof(float));
     offset += sizeof(float);
 
-    // Parse Vehicle - Brake Input  
+    // Parse Vehicle - Brake Input
     std::memcpy(&data.packet.vehicle_data.brake_input, buffer + offset, sizeof(float));
     offset += sizeof(float);
 
@@ -197,7 +185,6 @@ bool VehicleState::ParseVehicleState(const char* buffer, size_t size, VehicleSta
     // Parse Tail (2 bytes)
     std::memcpy(&data.packet.tail, buffer + offset, sizeof(uint8_t[2]));
     offset += sizeof(uint8_t[2]);
-
 
     return true;
 }
