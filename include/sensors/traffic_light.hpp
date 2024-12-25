@@ -1,11 +1,11 @@
 #pragma once
 
+#include <atomic>
+#include <functional>
+#include <iostream>
 #include <mutex>
 #include <string>
 #include <thread>
-#include <functional>
-#include <iostream>
-#include <atomic>
 
 #include "network/udp_receiver.hpp"
 

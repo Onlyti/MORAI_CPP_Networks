@@ -4,13 +4,13 @@
 #include <float.h>
 
 #include <atomic>
+#include <functional>
+#include <iostream>
 #include <memory>
 #include <mutex>
 #include <string>
 #include <thread>
 #include <vector>
-#include <functional>
-#include <iostream>
 
 #include "../network/udp_receiver.hpp"
 
@@ -18,16 +18,14 @@
  * @brief MORAI 시뮬레이터의 IMU 데이터를 수신하고 처리하는 클래스
  * @details UDP를 통해 IMU 센서의 자세, 각속도, 선가속도 데이터를 수신하고 처리합니다
  */
-class IMU : public UDPReceiver
-{
-    const static size_t PACKET_SIZE = 115;  // 25(header) + 80(data) + 2(tail)
+class IMU : public UDPReceiver {
+    const static size_t PACKET_SIZE = 115; // 25(header) + 80(data) + 2(tail)
 
 public:
     /**
      * @brief IMU 센서 데이터를 저장하는 구조체
      */
-    struct IMUData
-    {
+    struct IMUData {
         // Orientation (Quaternion)
         double w;
         double x;
@@ -48,7 +46,7 @@ public:
     // 콜백 함수 타입 정의
     using IMUCallback = std::function<void(const IMUData&)>;
 
-    IMU() = delete;  // Prevent default constructor
+    IMU() = delete; // Prevent default constructor
     /**
      * @brief IMU 클래스의 생성자
      * @param ip_address UDP 수신을 위한 IP 주소
@@ -88,8 +86,7 @@ public:
     bool GetLatestIMUData(IMUData& data);
 
     // 콜백 등록 함수
-    void RegisterCallback(IMUCallback callback)
-    {
+    void RegisterCallback(IMUCallback callback) {
         std::lock_guard<std::mutex> lock(callback_mutex_);
         imu_callback_ = callback;
     }
@@ -122,4 +119,4 @@ private:
     }};
 };
 
-#endif  // __IMU_HPP__
+#endif // __IMU_HPP__
