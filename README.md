@@ -2,6 +2,14 @@
 
 이 프로젝트는 MORAI 시뮬레이터와의 통신을 위한 C++ 네트워크 예제들을 포함하고 있습니다.
 
+## ROS Examples
+
+ROS 예제는 "ros_1_example" 브랜치에 있습니다.
+
+```
+git clone https://github.com/Onlyti/morai_cpp_networks.git -b ros_1_example
+```
+
 ## 빌드 요구사항
 
 ### 공통 요구사항:
@@ -211,15 +219,21 @@ target_link_libraries(your_project
 #include <morai_cpp_networks/network/udp_receiver.hpp>
 #include <morai_cpp_networks/sensors/camera.hpp>
 
+// 카메라 센서 콜백 함수 정의
+void CameraCallback(const CameraData& data) {
+   cv::Mat image(data.height, data.width, CV_8UC3, data.image);
+   cv::imshow("Camera", image);
+   cv::waitKey(1);
+}
+
 int main() {
-    // UDP 수신기 생성
-    morai::network::UdpReceiver receiver("127.0.0.1", 7777);
-    
-    // 카메라 센서 데이터 처리
-    morai::sensors::Camera camera;
-    // ... 사용자 코드 ...
-    
-    return 0;
+   // UDP 수신기 생성
+   std::function<void(const CameraData&)> camera_callback = CameraCallback;
+   Camera receiver("127.0.0.1", 7777, camera_callback);
+
+   // Do something 
+   // ...   
+   return 0;
 }
 ~~~~
 

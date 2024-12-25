@@ -124,6 +124,13 @@ public:
     Camera(const std::string& ip_address, uint16_t port);
 
     /**
+     * @brief Camera 클래스의 생성자
+     * @param ip_address UDP 수신을 위한 IP 주소
+     * @param port UDP 수신을 위한 포트 번호
+     */
+    Camera(const std::string& ip_address, uint16_t port, CameraDataCallback callback);
+
+    /**
      * @brief Camera 클래스의 소멸자
      */
     ~Camera();
