@@ -11,6 +11,14 @@ VehicleState::VehicleState(const std::string& ip_address, uint16_t port)
     thread_vehicle_state_receiver_ = std::thread(&VehicleState::ThreadVehicleStateReceiver, this);
 }
 
+VehicleState::VehicleState(const std::string& ip_address, uint16_t port, VehicleStateCallback callback)
+    : UDPReceiver(ip_address, port), is_running_(false), vehicle_state_callback_(callback) {
+    std::lock_guard<std::mutex> lock(callback_mutex_);
+    vehicle_state_callback_ = callback;
+    is_running_ = true;
+    thread_vehicle_state_receiver_ = std::thread(&VehicleState::ThreadVehicleStateReceiver, this);
+}
+
 VehicleState::~VehicleState()
 {
     is_running_ = false;

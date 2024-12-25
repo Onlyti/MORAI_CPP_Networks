@@ -11,6 +11,15 @@ GPS::GPS(const std::string& ip_address, uint16_t port)
     thread_gps_udp_receiver_ = std::thread(&GPS::ThreadGPSUdpReceiver, this);
 }
 
+GPS::GPS(const std::string& ip_address, uint16_t port, GPSCallback callback)
+    : UDPReceiver(ip_address, port), is_running_(false), gps_callback_(callback)
+{
+    std::lock_guard<std::mutex> lock(callback_mutex_);
+    gps_callback_ = callback;
+    is_running_ = true;
+    thread_gps_udp_receiver_ = std::thread(&GPS::ThreadGPSUdpReceiver, this);
+}
+
 GPS::~GPS()
 {
     is_running_ = false;

@@ -8,6 +8,14 @@ Camera::Camera(const std::string& ip_address, uint16_t port)
     thread_camera_udp_receiver_ = std::thread(&Camera::ThreadCameraUdpReceiver, this);
 }
 
+Camera::Camera(const std::string& ip_address, uint16_t port, CameraDataCallback callback)
+    : UDPReceiver(ip_address, port), is_running_(false), camera_callback_(callback), bbox_callback_(nullptr) {
+    std::lock_guard<std::mutex> lock(callback_mutex_);
+    camera_callback_ = callback;
+    is_running_ = true;
+    thread_camera_udp_receiver_ = std::thread(&Camera::ThreadCameraUdpReceiver, this);
+}
+
 Camera::~Camera() {
     is_running_ = false;
     if (thread_camera_udp_receiver_.joinable()) {

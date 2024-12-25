@@ -10,6 +10,14 @@ ObjectInfo::ObjectInfo(const std::string& ip_address, uint16_t port)
     thread_object_info_receiver_ = std::thread(&ObjectInfo::ThreadObjectInfoReceiver, this);
 }
 
+ObjectInfo::ObjectInfo(const std::string& ip_address, uint16_t port, ObjectInfoCallback callback)
+    : UDPReceiver(ip_address, port), is_running_(false), object_callback_(callback) {
+    std::lock_guard<std::mutex> lock(callback_mutex_);
+    object_callback_ = callback;
+    is_running_ = true;
+    thread_object_info_receiver_ = std::thread(&ObjectInfo::ThreadObjectInfoReceiver, this);
+}
+
 ObjectInfo::~ObjectInfo() {
     is_running_ = false;
     if (thread_object_info_receiver_.joinable()) {

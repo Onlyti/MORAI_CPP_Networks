@@ -39,7 +39,20 @@ public:
         char buffer[sizeof(TrafficLightPacket)];
     };
 
+    /**
+     * @brief TrafficLight 클래스의 생성자
+     * @param ip_address UDP 수신을 위한 IP 주소
+     * @param port UDP 수신을 위한 포트 번호
+     */
     TrafficLight(const std::string& ip_address, uint16_t port);
+
+    /**
+     * @brief TrafficLight 클래스의 생성자
+     * @param ip_address UDP 수신을 위한 IP 주소
+     * @param port UDP 수신을 위한 포트 번호
+     * @param callback TrafficLight 데이터를 처리할 콜백 함수
+     */
+    TrafficLight(const std::string& ip_address, uint16_t port, TrafficLightCallback callback);
     virtual ~TrafficLight();
 
     // 콜백 등록 함수

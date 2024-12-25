@@ -59,7 +59,25 @@ public:
     // 콜백 함수 타입 정의
     using ObjectInfoCallback = std::function<void(const std::vector<ObjectData>&)>;
 
+    /**
+     * @brief ObjectInfo 클래스의 생성자
+     * @param ip_address UDP 수신을 위한 IP 주소
+     * @param port UDP 수신을 위한 포트 번호
+     */
     ObjectInfo(const std::string& ip_address, uint16_t port);
+
+    /**
+     * @brief ObjectInfo 클래스의 생성자
+     * @param ip_address UDP 수신을 위한 IP 주소
+     * @param port UDP 수신을 위한 포트 번호
+     * @param callback ObjectInfo 데이터를 처리할 콜백 함수
+     */
+    ObjectInfo(const std::string& ip_address, uint16_t port, ObjectInfoCallback callback);
+
+    /**
+     * @brief ObjectInfo 클래스의 소멸자
+     * @note UDP 수신 스레드를 안전하게 종료합니다
+     */
     virtual ~ObjectInfo();
 
     // 콜백 등록 함수

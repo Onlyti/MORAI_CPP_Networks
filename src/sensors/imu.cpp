@@ -10,6 +10,15 @@ IMU::IMU(const std::string& ip_address, uint16_t port)
     thread_imu_udp_receiver_ = std::thread(&IMU::ThreadIMUUdpReceiver, this);
 }
 
+IMU::IMU(const std::string& ip_address, uint16_t port, IMUCallback callback)
+    : UDPReceiver(ip_address, port), is_running_(false), imu_callback_(callback)
+{
+    std::lock_guard<std::mutex> lock(callback_mutex_);
+    imu_callback_ = callback;
+    is_running_ = true;
+    thread_imu_udp_receiver_ = std::thread(&IMU::ThreadIMUUdpReceiver, this);
+}
+
 IMU::~IMU()
 {
     is_running_ = false;

@@ -10,6 +10,14 @@ TrafficLight::TrafficLight(const std::string& ip_address, uint16_t port)
     thread_traffic_light_receiver_ = std::thread(&TrafficLight::ThreadTrafficLightReceiver, this);
 }
 
+TrafficLight::TrafficLight(const std::string& ip_address, uint16_t port, TrafficLightCallback callback)
+    : UDPReceiver(ip_address, port), is_running_(false), traffic_light_callback_(callback) {
+    std::lock_guard<std::mutex> lock(callback_mutex_);
+    traffic_light_callback_ = callback;
+    is_running_ = true;
+    thread_traffic_light_receiver_ = std::thread(&TrafficLight::ThreadTrafficLightReceiver, this);
+}
+
 TrafficLight::~TrafficLight() {
     is_running_ = false;
     if (thread_traffic_light_receiver_.joinable()) {

@@ -130,6 +130,14 @@ class VehicleState : public UDPReceiver
     VehicleState(const std::string& ip_address, uint16_t port);
 
     /**
+     * @brief VehicleState 클래스의 생성자
+     * @param ip_address UDP 수신을 위한 IP 주소
+     * @param port UDP 수신을 위한 포트 번호
+     * @param callback VehicleState 데이터를 처리할 콜백 함수
+     */
+    VehicleState(const std::string& ip_address, uint16_t port, VehicleStateCallback callback);
+
+    /**
      * @brief VehicleState 클래스의 소멸자
      */
     ~VehicleState();

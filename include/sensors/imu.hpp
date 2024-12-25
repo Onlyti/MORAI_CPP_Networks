@@ -58,6 +58,14 @@ public:
     IMU(const std::string& ip_address, uint16_t port);
 
     /**
+     * @brief IMU 클래스의 생성자
+     * @param ip_address UDP 수신을 위한 IP 주소
+     * @param port UDP 수신을 위한 포트 번호
+     * @param callback IMU 데이터를 처리할 콜백 함수
+     */
+    IMU(const std::string& ip_address, uint16_t port, IMUCallback callback);
+
+    /**
      * @brief IMU 클래스의 소멸자
      * @note UDP 수신 스레드를 안전하게 종료합니다
      */
