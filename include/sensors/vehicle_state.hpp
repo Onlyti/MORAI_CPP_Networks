@@ -12,6 +12,8 @@
 
 #include "../network/udp_receiver.hpp"
 
+namespace MoraiCppUdp {
+
 /**
  * @class VehicleState
  * @brief MORAI 시뮬레이터의 차량 상태 데이터를 수신하고 처리하는 클래스
@@ -184,4 +186,5 @@ public:
     }}; ///< 기본 콜백 함수
 };
 
+} // namespace MoraiCppUdp
 #endif // __VEHICLE_STATE_HPP__

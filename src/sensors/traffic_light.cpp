@@ -4,6 +4,8 @@
 #include <iostream>
 #include <thread>
 
+using namespace MoraiCppUdp;
+
 TrafficLight::TrafficLight(const std::string& ip_address, uint16_t port)
     : UDPReceiver(ip_address, port), is_running_(false) {
     is_running_ = true;

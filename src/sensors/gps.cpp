@@ -4,6 +4,8 @@
 #include <sstream>
 #include "sensors/gps.hpp"
 
+using namespace MoraiCppUdp;
+
 GPS::GPS(const std::string& ip_address, uint16_t port) : UDPReceiver(ip_address, port), is_running_(false) {
     is_running_ = true;
     thread_gps_udp_receiver_ = std::thread(&GPS::ThreadGPSUdpReceiver, this);

@@ -1,4 +1,7 @@
 #pragma once
+#ifndef __UDP_SENDER_HPP__
+#define __UDP_SENDER_HPP__
+
 #include <string>
 #include <stdexcept>
 #include <thread>
@@ -24,6 +27,8 @@
     #define CLOSE_SOCKET close
 #endif
 
+namespace MoraiCppUdp {
+
 class UDPSender {
 public:
     UDPSender(const std::string& ip, int port);
@@ -46,3 +51,6 @@ private:
     WSADATA wsa_data_;
 #endif
 };
+
+} // namespace MoraiCppUdp
+#endif // __UDP_SENDER_HPP__

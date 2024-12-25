@@ -1,5 +1,8 @@
 #pragma once
 
+#ifndef __TRAFFIC_LIGHT_HPP__
+#define __TRAFFIC_LIGHT_HPP__
+
 #include <atomic>
 #include <functional>
 #include <iostream>
@@ -8,6 +11,8 @@
 #include <thread>
 
 #include "network/udp_receiver.hpp"
+
+namespace MoraiCppUdp{
 
 class TrafficLight : public UDPReceiver {
 public:
@@ -75,3 +80,6 @@ private:
                   << "Consider registering a callback using RegisterCallback()." << std::endl;
     }};
 };
+
+} // namespace MoraiCppUdp
+#endif // __TRAFFIC_LIGHT_HPP__

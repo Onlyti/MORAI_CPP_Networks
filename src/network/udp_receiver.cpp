@@ -3,6 +3,8 @@
 #include <cstring>
 #include <iostream>
 
+using namespace MoraiCppUdp;
+
 UDPReceiver::UDPReceiver(const std::string& ip, int port)
     : ip_(ip), port_(port), socket_(INVALID_SOCKET), is_initialized_(false)
 {

@@ -12,6 +12,8 @@
 
 #include "../network/udp_receiver.hpp"
 
+namespace MoraiCppUdp{
+
 /**
  * @class GPS
  * @brief MORAI 시뮬레이터의 GPS 데이터를 수신하고 처리하는 클래스
@@ -104,4 +106,5 @@ private:
     }};
 };
 
+} // namespace MoraiCppUdp
 #endif // __GPS_HPP__

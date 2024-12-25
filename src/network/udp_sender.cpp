@@ -2,6 +2,8 @@
 #include <iostream>
 #include <cstring>
 
+using namespace MoraiCppUdp;
+
 UDPSender::UDPSender(const std::string& ip, int port)
     : ip_(ip)
     , dest_port_(port)

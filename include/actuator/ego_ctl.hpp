@@ -7,6 +7,8 @@
 
 #include "../network/udp_sender.hpp"
 
+namespace MoraiCppUdp {
+
 /**
  * @brief MORAI 시뮬레이터의 차량 제어를 위한 클래스
  * @details UDP를 통해 차량 제어 명령을 전송합니다
@@ -93,4 +95,5 @@ private:
     bool PackControlCommand(const ControlCommand& command, uint8_t* buffer);
 };
 
+} // namespace MoraiCppUdp
 #endif  // __EGO_CTL_HPP__

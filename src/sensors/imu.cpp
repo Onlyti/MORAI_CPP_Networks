@@ -2,6 +2,8 @@
 #include <iostream>
 #include "sensors/imu.hpp"
 
+using namespace MoraiCppUdp;
+
 IMU::IMU(const std::string& ip_address, uint16_t port) : UDPReceiver(ip_address, port), is_running_(false) {
     is_running_ = true;
     is_imu_data_received_ = false;

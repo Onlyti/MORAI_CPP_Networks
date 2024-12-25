@@ -12,6 +12,7 @@
 
 #include "../network/udp_receiver.hpp"
 
+namespace MoraiCppUdp{
 /**
  * @brief MORAI 시뮬레이터의 카메라 데이터를 수신하고 처리하는 클래스
  * @details UDP를 통해 카메라 이미지와 바운딩 박스 데이터를 수신하고 처리합니다
@@ -167,4 +168,5 @@ private:
     bool ParseBoundingBoxData(const char* buffer, size_t size, BoundingBoxData& data);
 };
 
+} // namespace MoraiCppUdp
 #endif // __CAMERA_HPP__

@@ -3,6 +3,8 @@
 #include <cstring>
 #include <iostream>
 
+using namespace MoraiCppUdp;
+
 EgoControl::EgoControl(const std::string& ip_address, uint16_t dest_port, uint16_t host_port)
 {
     udp_sender_ = std::make_unique<UDPSender>(ip_address, dest_port, host_port);

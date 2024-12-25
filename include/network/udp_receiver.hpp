@@ -38,6 +38,8 @@
     #define CLOSE_SOCKET close
 #endif
 
+namespace MoraiCppUdp {
+
 class UDPReceiver {
 public:
     UDPReceiver() = delete; // Prevent default constructor
@@ -61,4 +63,5 @@ private:
 #endif
 };
 
+} // namespace MoraiCppUdp
 #endif // __UDP_RECEIVER_HPP__
