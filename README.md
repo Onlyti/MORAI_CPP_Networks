@@ -182,7 +182,7 @@ include(FetchContent)
 FetchContent_Declare(
     morai_cpp_networks
     GIT_REPOSITORY https://github.com/Onlyti/morai_cpp_networks.git
-    GIT_TAG CoreLib_0.2.1
+    GIT_TAG CoreLib_0.2.2
 )
 
 # Fetch and build morai_cpp_networks
