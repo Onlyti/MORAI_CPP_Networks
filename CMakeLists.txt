@@ -81,6 +81,7 @@ set_target_properties(${PROJECT_NAME}_sensor PROPERTIES
 
 target_link_libraries(${PROJECT_NAME}_sensor
     ${PLATFORM_LIBS}
+    ${PROJECT_NAME}_network
     ${OpenCV_LIBS}
     ${Eigen3_LIBRARIES}
 )
