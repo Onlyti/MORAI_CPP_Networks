@@ -39,6 +39,14 @@ bool UDPReceiver::Init()
         return false;
     }
 
+    // Set socket timeout
+    struct timeval timeout;
+    timeout.tv_sec = 1;  // 1 sec
+    timeout.tv_usec = 0; // 0 microsec
+    if (setsockopt(socket_, SOL_SOCKET, SO_RCVTIMEO, (char *)&timeout, sizeof(timeout)) < 0) {
+        std::cerr << "Failed to set socket timeout" << std::endl;
+    }
+
     // Set server address
     std::memset(&server_addr_, 0, sizeof(server_addr_));
     server_addr_.sin_family = AF_INET;
