@@ -177,18 +177,38 @@ cmake --install .
 당신의 프로젝트의 CMakeLists.txt에 다음과 같이 추가하세요:
 
 ~~~~ cmake
+message(STATUS "Fetch MORAI_CPP_NETWORK_MODULE")
 include(FetchContent)
 FetchContent_Declare(
     morai_cpp_networks
     GIT_REPOSITORY https://github.com/Onlyti/morai_cpp_networks.git
-    GIT_TAG CoreLib
+    GIT_TAG CoreLib_0.2.2
 )
-FetchContent_MakeAvailable(morai_cpp_networks)
+
+# Fetch and build morai_cpp_networks
+FetchContent_GetProperties(morai_cpp_networks)
+if(NOT morai_cpp_networks_POPULATED)
+    FetchContent_Populate(morai_cpp_networks)
+
+    add_subdirectory(${morai_cpp_networks_SOURCE_DIR} ${morai_cpp_networks_BINARY_DIR})
+endif()
+
+# Define variables
+set(MORAI_CPP_NETWORKS_INCLUDE_DIRS ${morai_cpp_networks_SOURCE_DIR}/include)
+set(MORAI_CPP_NETWORKS_LIBRARIES 
+    morai_cpp_networks_network 
+    morai_cpp_networks_sensor
+)
+
+# Include directory
+include_directories(
+  # MORAI_CPP_NETWORK_MODULE
+  ${MORAI_CPP_NETWORKS_INCLUDE_DIRS}
+)
 
 add_executable(your_project main.cpp)
 target_link_libraries(your_project
-    morai_cpp_networks_network   # 직접 타겟 이름 사용
-    morai_cpp_networks_sensor
+  ${MORAI_CPP_NETWORKS_LIBRARIES}
 )
 ~~~~
 

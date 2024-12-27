@@ -7,6 +7,8 @@
 
 #include "../network/udp_sender.hpp"
 
+namespace MoraiCppUdp {
+
 /**
  * @brief MORAI 시뮬레이터의 차량 제어를 위한 클래스
  * @details UDP를 통해 차량 제어 명령을 전송합니다
@@ -72,9 +74,9 @@ public:
     /**
      * @brief EgoControl 클래스의 생성자
      * @param ip_address UDP 전송을 위한 IP 주소
-     * @param port UDP 전송을 위한 포트 번호
+     * @param dest_port UDP 전송을 위한 목적지 포트 번호
      */
-    EgoControl(const std::string& ip_address, uint16_t dest_port, uint16_t host_port);
+    EgoControl(const std::string& ip_address, uint16_t dest_port);
     
     /**
      * @brief EgoControl 클래스의 소멸자
@@ -93,4 +95,5 @@ private:
     bool PackControlCommand(const ControlCommand& command, uint8_t* buffer);
 };
 
+} // namespace MoraiCppUdp
 #endif  // __EGO_CTL_HPP__

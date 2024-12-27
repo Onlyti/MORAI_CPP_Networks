@@ -337,6 +337,7 @@ set_target_properties(${PROJECT_NAME}_sensor PROPERTIES
 
 target_link_libraries(${PROJECT_NAME}_sensor
     ${PLATFORM_LIBS}
+    ${PROJECT_NAME}_network
     ${OpenCV_LIBS}
     ${Eigen3_LIBRARIES}
 )
@@ -356,8 +357,8 @@ include(CMakePackageConfigHelpers)
 include(GNUInstallDirs)
 
 # 설치 경로 설정
-set(INCLUDE_INSTALL_DIR ${CMAKE_INSTALL_INCLUDEDIR})
-set(LIB_INSTALL_DIR ${CMAKE_INSTALL_LIBDIR})
+set(INCLUDE_INSTALL_DIR include)
+set(LIB_INSTALL_DIR lib)
 set(CONFIG_INSTALL_DIR ${LIB_INSTALL_DIR}/cmake/MoraiCppNetworks)
 
 # Config 파일 생성

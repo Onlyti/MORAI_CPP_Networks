@@ -14,6 +14,8 @@
 
 #include "../network/udp_receiver.hpp"
 
+namespace MoraiCppUdp{
+
 /**
  * @brief MORAI 시뮬레이터의 IMU 데이터를 수신하고 처리하는 클래스
  * @details UDP를 통해 IMU 센서의 자세, 각속도, 선가속도 데이터를 수신하고 처리합니다
@@ -119,4 +121,5 @@ private:
     }};
 };
 
+} // namespace MoraiCppUdp
 #endif // __IMU_HPP__

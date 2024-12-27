@@ -1,5 +1,8 @@
 #pragma once
 
+#ifndef __OBJECT_INFO_HPP__
+#define __OBJECT_INFO_HPP__
+
 #include <atomic>
 #include <functional>
 #include <iostream>
@@ -9,6 +12,8 @@
 #include <vector>
 
 #include "network/udp_receiver.hpp"
+
+namespace MoraiCppUdp{
 
 class ObjectInfo : public UDPReceiver {
 public:
@@ -108,3 +113,6 @@ private:
                   << "Consider registering a callback using RegisterCallback()." << std::endl;
     }};
 };
+
+} // namespace MoraiCppUdp
+#endif // __OBJECT_INFO_HPP__

@@ -2,6 +2,8 @@
 
 #include <iostream>
 
+using namespace MoraiCppUdp;
+
 Camera::Camera(const std::string& ip_address, uint16_t port)
     : UDPReceiver(ip_address, port), is_running_(false), camera_callback_(nullptr), bbox_callback_(nullptr) {
     is_running_ = true;

@@ -3,6 +3,8 @@
 
 #include "sensors/object_info.hpp"
 
+using namespace MoraiCppUdp;
+
 ObjectInfo::ObjectInfo(const std::string& ip_address, uint16_t port)
     : UDPReceiver(ip_address, port), is_running_(false) {
     is_running_ = true;
