@@ -32,7 +32,6 @@ namespace MoraiCppUdp {
 class UDPSender {
 public:
     UDPSender(const std::string& ip, int port);
-    UDPSender(const std::string& ip, int dest_port, int host_port);
     ~UDPSender();
     
     bool Init();
@@ -42,7 +41,6 @@ public:
 private:
     std::string ip_;
     int dest_port_;
-    int host_port_;
     SOCKET_TYPE socket_;
     struct sockaddr_in target_addr_;
     bool is_initialized_;

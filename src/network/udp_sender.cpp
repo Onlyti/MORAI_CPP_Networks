@@ -7,17 +7,6 @@ using namespace MoraiCppUdp;
 UDPSender::UDPSender(const std::string& ip, int port)
     : ip_(ip)
     , dest_port_(port)
-    , host_port_(-1)
-    , socket_(INVALID_SOCKET)
-    , is_initialized_(false)
-{
-    Init();
-}
-
-UDPSender::UDPSender(const std::string& ip, int dest_port, int host_port)
-    : ip_(ip)
-    , dest_port_(dest_port)
-    , host_port_(host_port)
     , socket_(INVALID_SOCKET)
     , is_initialized_(false)
 {
@@ -45,24 +34,6 @@ bool UDPSender::Init() {
         WSACleanup();
 #endif
         return false;
-    }
-
-    // Bind to host port if specified
-    if (host_port_ != -1) {
-        sockaddr_in host_addr;
-        std::memset(&host_addr, 0, sizeof(host_addr));
-        host_addr.sin_family = AF_INET;
-        host_addr.sin_port = htons(host_port_);
-        host_addr.sin_addr.s_addr = INADDR_ANY;  // Bind to any local address
-
-        if (bind(socket_, (struct sockaddr*)&host_addr, sizeof(host_addr)) == SOCKET_ERROR) {
-            std::cerr << "Binding to host port failed" << std::endl;
-            CLOSE_SOCKET(socket_);
-#ifdef _WIN32
-            WSACleanup();
-#endif
-            return false;
-        }
     }
 
     // Set target address

@@ -74,9 +74,9 @@ public:
     /**
      * @brief EgoControl 클래스의 생성자
      * @param ip_address UDP 전송을 위한 IP 주소
-     * @param port UDP 전송을 위한 포트 번호
+     * @param dest_port UDP 전송을 위한 목적지 포트 번호
      */
-    EgoControl(const std::string& ip_address, uint16_t dest_port, uint16_t host_port);
+    EgoControl(const std::string& ip_address, uint16_t dest_port);
     
     /**
      * @brief EgoControl 클래스의 소멸자
