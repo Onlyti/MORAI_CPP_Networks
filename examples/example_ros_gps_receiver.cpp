@@ -147,11 +147,11 @@ void OnGPSData(const GPS::GPSData& data)
 {
     std::cout << "===== GPS Data =====" << std::endl;
     std::cout << "\tSentence Type: " << data.sentence_type << std::endl;
-    std::cout << "\tTimestamp: " << std::fixed << std::setprecision(6) 
+    std::cout << "\tTimestamp: " << std::fixed << std::setprecision(8) 
               << data.timestamp << std::resetiosflags(std::ios::fixed) << std::endl;
-    std::cout << "\tLatitude: " << std::fixed << std::setprecision(6) << data.latitude << std::endl;
+    std::cout << "\tLatitude: " << std::fixed << std::setprecision(8) << data.latitude << std::endl;
     std::cout << "\tLatitude Direction: " << data.lat_dir << std::endl;
-    std::cout << "\tLongitude: " << std::fixed << std::setprecision(6) << data.longitude << std::endl;
+    std::cout << "\tLongitude: " << std::fixed << std::setprecision(8) << data.longitude << std::endl;
     std::cout << "\tLongitude Direction: " << data.lon_dir << std::endl;
     std::cout << "\tAltitude: " << std::fixed << std::setprecision(6) 
               << data.altitude << std::resetiosflags(std::ios::fixed) << std::endl;

@@ -12,7 +12,7 @@ void PrintUsage(const char* program_name)
 
 int main(int argc, char* argv[])
 {
-    if (argc != 4)
+    if (argc != 3)
     {
         PrintUsage(argv[0]);
         return -1;
@@ -20,14 +20,13 @@ int main(int argc, char* argv[])
 
     const std::string ip_address = argv[1];
     const int dest_port = std::stoi(argv[2]);
-    const int host_port = std::stoi(argv[3]);
 
     try
     {
         // Create EgoControl instance with command line arguments
-        EgoControl ego_control(ip_address, dest_port, host_port);
+        EgoControl ego_control(ip_address, dest_port);
 
-        std::cout << "UDP Client Info - IP: " << ip_address << ", Dest Port: " << dest_port << ", Host Port: " << host_port << std::endl;
+        std::cout << "UDP Client Info - IP: " << ip_address << ", Dest Port: " << dest_port << std::endl;
 
         // Create control command
         EgoControl::ControlCommand cmd;
