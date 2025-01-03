@@ -19,7 +19,10 @@ class ObjectInfo : public UDPReceiver {
 public:
     static constexpr size_t MAX_OBJECTS = 20;
     static constexpr size_t PACKET_SIZE = 2160; // 전체 패킷 크기
-
+    struct Timestamp {
+        uint32_t sec;
+        uint32_t nsec;
+    };
     struct ObjectData {
         int16_t obj_id;      // Object ID (2 bytes)
         int16_t obj_type;    // Object Type -1:Ego, 0:Pedestrian, 1:Vehicle, 2:Object (2 bytes)
@@ -42,6 +45,11 @@ public:
         char link_id[38];    // MGeo Link ID (38 bytes)
     }; // Total: 106 bytes per object
 
+    struct ObjectsData{
+        Timestamp timestamp;
+        std::vector<ObjectData> objects;
+    };
+
 #pragma pack(push, 1)
     struct ObjectInfoPacket {
         uint8_t sharp;                   // '#' (1 byte)
@@ -51,7 +59,7 @@ public:
         uint8_t aux_data[12];            // Aux Data (12 bytes)
         uint32_t timestamp_sec;          // Timestamp seconds (4 bytes)
         uint32_t timestamp_nsec;         // Timestamp nanoseconds (4 bytes)
-        ObjectData objects[MAX_OBJECTS]; // Object Data Array (106 * 20 = 2120 bytes)
+        ObjectData objects[MAX_OBJECTS]; // Object Data Array (2128 bytes)
         uint8_t tail[2];                 // 0x0D, 0x0A (2 bytes)
     };
 #pragma pack(pop)
@@ -62,7 +70,7 @@ public:
     };
 
     // 콜백 함수 타입 정의
-    using ObjectInfoCallback = std::function<void(const std::vector<ObjectData>&)>;
+    using ObjectInfoCallback = std::function<void(const ObjectsData&)>;
 
     /**
      * @brief ObjectInfo 클래스의 생성자
@@ -108,7 +116,7 @@ private:
 
     ObjectInfoPacketStruct packet_data_;
     std::vector<ObjectData> object_data_;
-    ObjectInfoCallback object_callback_{[](const std::vector<ObjectData>& data) {
+    ObjectInfoCallback object_callback_{[](const ObjectsData& data) {
         std::cout << "Note: Object info received but no callback is registered. "
                   << "Consider registering a callback using RegisterCallback()." << std::endl;
     }};
