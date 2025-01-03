@@ -351,8 +351,22 @@ install(TARGETS ${PROJECT_NAME}_network ${PROJECT_NAME}_sensor
     INCLUDES DESTINATION include
 )
 
-# Set include directory path for applications
+# Actuator library sources
+add_library(${PROJECT_NAME}_actuator
+    src/actuator/ego_ctl.cpp
+)
 
+# 센서 라이브러리에 대한 export 설정 추가
+set_target_properties(${PROJECT_NAME}_actuator PROPERTIES
+    EXPORT_NAME actuator
+)
+
+target_link_libraries(${PROJECT_NAME}_actuator
+    ${PLATFORM_LIBS}
+    ${PROJECT_NAME}_network
+)
+
+# Set include directory path for applications
 include(CMakePackageConfigHelpers)
 include(GNUInstallDirs)
 
