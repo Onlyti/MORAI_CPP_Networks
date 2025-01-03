@@ -16,7 +16,7 @@ std::atomic<bool> is_running(true);
 #ifndef _WIN32
 ros::Publisher imu_pub;
 
-void PublishIMUData(const IMU::IMUData& data)
+void PublishIMUData(const MoraiCppUdp::IMU::IMUData& data)
 {
     sensor_msgs::Imu msg;
     msg.header.stamp = ros::Time::now();
@@ -47,7 +47,7 @@ void PublishIMUData(const IMU::IMUData& data)
 }
 #endif
 
-void OnIMUData(const IMU::IMUData& data)
+void OnIMUData(const MoraiCppUdp::IMU::IMUData& data)
 {
     std::cout << "===== IMU Data =====" << std::endl;
     std::cout << "Linear Acceleration (m/s^2):" << std::endl;
@@ -100,7 +100,7 @@ int main(int argc, char* argv[])
 
     try
     {
-        IMU imu(ip_address, port);
+        MoraiCppUdp::IMU imu(ip_address, port);
         std::cout << "UDP Server Info - IP: " << ip_address << ", Port: " << port << std::endl;
 
         imu.RegisterCallback(OnIMUData);

@@ -43,7 +43,7 @@ void gpsToMapCoordinates(double lat, double lon, double& x, double& y) {
     y = EARTH_RADIUS * log(tan(M_PI/4 + dLat/2));
 }
 
-void PublishGPSData(const GPS::GPSData& data)
+void PublishGPSData(const MoraiCppUdp::GPS::GPSData& data)
 {
     // GPS 데이터 발행
     sensor_msgs::NavSatFix gps_msg;
@@ -143,7 +143,7 @@ void publishMap() {
 }
 #endif
 
-void OnGPSData(const GPS::GPSData& data)
+void OnGPSData(const MoraiCppUdp::GPS::GPSData& data)
 {
     std::cout << "===== GPS Data =====" << std::endl;
     std::cout << "\tSentence Type: " << data.sentence_type << std::endl;
@@ -198,7 +198,7 @@ int main(int argc, char* argv[])
 
     try
     {
-        GPS gps(ip_address, port);
+        MoraiCppUdp::GPS gps(ip_address, port);
         std::cout << "UDP Server Info - IP: " << ip_address << ", Port: " << port << std::endl;
 
         gps.RegisterCallback(OnGPSData);

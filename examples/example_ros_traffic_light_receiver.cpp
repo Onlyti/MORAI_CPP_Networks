@@ -18,7 +18,7 @@ std::atomic<bool> is_running(true);
 ros::Publisher traffic_sign_pub;
 ros::Publisher traffic_text_pub;
 
-void PublishTrafficSign(const TrafficLight::TrafficLightData& data)
+void PublishTrafficSign(const MoraiCppUdp::TrafficLight::TrafficLightData& data)
 {
     // Text message
     std_msgs::String text_msg;
@@ -102,7 +102,7 @@ void PublishTrafficSign(const TrafficLight::TrafficLightData& data)
 }
 #endif
 
-void OnTrafficLightData(const TrafficLight::TrafficLightData& data)
+void OnTrafficLightData(const MoraiCppUdp::TrafficLight::TrafficLightData& data)
 {
     // Console output
     std::cout << "===== Traffic Light Data =====" << std::endl;
@@ -176,7 +176,7 @@ int main(int argc, char* argv[])
 
     try
     {
-        TrafficLight traffic_light(ip_address, port);
+        MoraiCppUdp::TrafficLight traffic_light(ip_address, port);
         std::cout << "UDP Server Info - IP: " << ip_address << ", Port: " << port << std::endl;
 
         traffic_light.RegisterCallback(OnTrafficLightData);

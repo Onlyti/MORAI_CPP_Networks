@@ -24,15 +24,15 @@ int main(int argc, char* argv[])
     try
     {
         // Create EgoControl instance with command line arguments
-        EgoControl ego_control(ip_address, dest_port);
+        MoraiCppUdp::EgoControl ego_control(ip_address, dest_port);
 
         std::cout << "UDP Client Info - IP: " << ip_address << ", Dest Port: " << dest_port << std::endl;
 
         // Create control command
-        EgoControl::ControlCommand cmd;
-        cmd.ctrl_mode = EgoControl::ControlMode::AUTO_MODE;
-        cmd.gear = EgoControl::GearCommand::DRIVE;
-        cmd.long_cmd_type = EgoControl::LongitudinalCommandType::VELOCITY;
+        MoraiCppUdp::EgoControl::ControlCommand cmd;
+        cmd.ctrl_mode = MoraiCppUdp::EgoControl::ControlMode::AUTO_MODE;
+        cmd.gear = MoraiCppUdp::EgoControl::GearCommand::DRIVE;
+        cmd.long_cmd_type = MoraiCppUdp::EgoControl::LongitudinalCommandType::VELOCITY;
 
         // Initial values
         cmd.velocity = 0.0f;      // km/h

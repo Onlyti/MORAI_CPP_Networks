@@ -16,30 +16,30 @@
 #endif
 
 // 기어 상태를 문자열로 변환하는 헬퍼 함수
-std::string GearToString(VehicleState::GearMode gear) {
+std::string GearToString(MoraiCppUdp::VehicleState::GearMode gear) {
     switch (gear) {
-        case VehicleState::GearMode::MANUAL: return "MANUAL";
-        case VehicleState::GearMode::PARKING: return "PARKING";
-        case VehicleState::GearMode::REVERSE: return "REVERSE";
-        case VehicleState::GearMode::NEUTRAL: return "NEUTRAL";
-        case VehicleState::GearMode::DRIVE: return "DRIVE";
-        case VehicleState::GearMode::LOW: return "LOW";
+        case MoraiCppUdp::VehicleState::GearMode::MANUAL: return "MANUAL";
+        case MoraiCppUdp::VehicleState::GearMode::PARKING: return "PARKING";
+        case MoraiCppUdp::VehicleState::GearMode::REVERSE: return "REVERSE";
+        case MoraiCppUdp::VehicleState::GearMode::NEUTRAL: return "NEUTRAL";
+        case MoraiCppUdp::VehicleState::GearMode::DRIVE: return "DRIVE";
+        case MoraiCppUdp::VehicleState::GearMode::LOW: return "LOW";
         default: return "UNKNOWN";
     }
 }
 
 // 제어 모드를 문자열로 변환하는 헬퍼 함수
-std::string ControlModeToString(VehicleState::ControlMode mode) {
+std::string ControlModeToString(MoraiCppUdp::VehicleState::ControlMode mode) {
     switch (mode) {
-        case VehicleState::ControlMode::MORAI_AI: return "MORAI_AI";
-        case VehicleState::ControlMode::KEYBOARD: return "KEYBOARD";
-        case VehicleState::ControlMode::AUTO: return "AUTO";
+        case MoraiCppUdp::VehicleState::ControlMode::MORAI_AI: return "MORAI_AI";
+        case MoraiCppUdp::VehicleState::ControlMode::KEYBOARD: return "KEYBOARD";
+        case MoraiCppUdp::VehicleState::ControlMode::AUTO: return "AUTO";
         default: return "UNKNOWN";
     }
 }
 
 // Vector3 출력을 위한 헬퍼 함수
-void PrintVector3(const std::string& name, const VehicleState::Vector3& vec, 
+void PrintVector3(const std::string& name, const MoraiCppUdp::VehicleState::Vector3& vec, 
                  const std::string& unit = "", int precision = 3) {
     std::cout << name << ":" << "\n"
               << "\tx: " << std::fixed << std::setprecision(precision) << vec.x
@@ -68,7 +68,7 @@ ros::Publisher twist_pub;
 ros::Publisher pose_pub;
 tf2_ros::TransformBroadcaster* br = nullptr;
 
-void PublishVehicleState(const VehicleState::VehicleData& data)
+void PublishVehicleState(const MoraiCppUdp::VehicleState::VehicleData& data)
 {
     // Odometry 메시지
     nav_msgs::Odometry odom;
@@ -126,7 +126,7 @@ void PublishVehicleState(const VehicleState::VehicleData& data)
 }
 #endif
 
-void OnVehicleState(const VehicleState::VehicleData& data)
+void OnVehicleState(const MoraiCppUdp::VehicleState::VehicleData& data)
 {
     ClearScreen();
 
@@ -232,7 +232,7 @@ int main(int argc, char** argv)
         std::cout << "Port: " << port << std::endl;
 
         // UDP 수신을 위한 VehicleState 객체 생성
-        VehicleState vehicle_state(ip_address, port, OnVehicleState);
+        MoraiCppUdp::VehicleState vehicle_state(ip_address, port, OnVehicleState);
         bool is_running = true;
         #ifndef _WIN32
         while(ros::ok() && is_running)

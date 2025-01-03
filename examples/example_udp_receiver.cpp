@@ -10,11 +10,11 @@ int main(int argc, char* argv[]) {
     int port = atoi(argv[1]);               // port number from argument
     
     // create UDP receiver object
-    std::shared_ptr<UDPReceiver> ptr_receiver;
+    std::shared_ptr<MoraiCppUdp::UDPReceiver> ptr_receiver;
     
     try {
         // connect UDP socket
-        ptr_receiver = std::make_shared<UDPReceiver>(ip, port);
+        ptr_receiver = std::make_shared<MoraiCppUdp::UDPReceiver>(ip, port);
         
         while(true) {
             // receive data

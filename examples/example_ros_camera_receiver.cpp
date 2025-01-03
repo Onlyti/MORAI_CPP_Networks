@@ -28,7 +28,7 @@ void PublishImage(const cv::Mat& image) {
 }
 #endif
 
-void OnCameraData(const Camera::CameraData& camera_data) {
+void OnCameraData(const MoraiCppUdp::Camera::CameraData& camera_data) {
     if (!camera_data.image_data.empty()) {
         cv::imshow("Camera Image", camera_data.image_data);
         cv::waitKey(1);
@@ -39,7 +39,7 @@ void OnCameraData(const Camera::CameraData& camera_data) {
     }
 }
 
-void OnBoundingBoxData(const Camera::BoundingBoxData& bbox_data) {
+void OnBoundingBoxData(const MoraiCppUdp::Camera::BoundingBoxData& bbox_data) {
     // 바운딩 박스 데이터는 현재 무시
     (void)bbox_data;
 }
@@ -71,7 +71,7 @@ int main(int argc, char* argv[]) {
 #endif
 
     try {
-        Camera camera(ip_address, port);
+        MoraiCppUdp::Camera camera(ip_address, port);
         std::cout << "UDP Server Info - IP: " << ip_address << ", Port: " << port << std::endl;
 
         camera.RegisterCameraCallback(OnCameraData);

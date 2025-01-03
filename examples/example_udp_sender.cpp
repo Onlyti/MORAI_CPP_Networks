@@ -5,7 +5,7 @@
 #include <chrono>
 
 int main() {
-    UDPSender sender("127.0.0.1", 12345);
+    MoraiCppUdp::UDPSender sender("127.0.0.1", 12345);
     
     if (!sender.Init()) {
         std::cerr << "Failed to initialize UDP sender" << std::endl;

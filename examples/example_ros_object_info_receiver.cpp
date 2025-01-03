@@ -22,15 +22,15 @@ ros::Publisher marker_pub;
 // 헬퍼 함수 구현
 std::string ObjectTypeToString(int16_t type) {
     switch(type) {
-        case ObjectInfo::TYPE_EGO: return "EGO";
-        case ObjectInfo::TYPE_PEDESTRIAN: return "PEDESTRIAN";
-        case ObjectInfo::TYPE_VEHICLE: return "VEHICLE";
-        case ObjectInfo::TYPE_OBJECT: return "OBJECT";
+        case MoraiCppUdp::ObjectInfo::TYPE_EGO: return "EGO";
+        case MoraiCppUdp::ObjectInfo::TYPE_PEDESTRIAN: return "PEDESTRIAN";
+        case MoraiCppUdp::ObjectInfo::TYPE_VEHICLE: return "VEHICLE";
+        case MoraiCppUdp::ObjectInfo::TYPE_OBJECT: return "OBJECT";
         default: return "UNKNOWN";
     }
 }
 
-void PublishObjectMarkers(const std::vector<ObjectInfo::ObjectData>& objects)
+void PublishObjectMarkers(const std::vector<MoraiCppUdp::ObjectInfo::ObjectData>& objects)
 {
     visualization_msgs::MarkerArray marker_array;
     
@@ -69,13 +69,13 @@ void PublishObjectMarkers(const std::vector<ObjectInfo::ObjectData>& objects)
         marker.color.a = 0.7;
         switch(obj.obj_type)
         {
-            case ObjectInfo::TYPE_EGO:
+            case MoraiCppUdp::ObjectInfo::TYPE_EGO:
                 marker.color.r = 1.0; marker.color.g = 0.0; marker.color.b = 0.0;
                 break;
-            case ObjectInfo::TYPE_PEDESTRIAN:
+            case MoraiCppUdp::ObjectInfo::TYPE_PEDESTRIAN:
                 marker.color.r = 0.0; marker.color.g = 1.0; marker.color.b = 0.0;
                 break;
-            case ObjectInfo::TYPE_VEHICLE:
+            case MoraiCppUdp::ObjectInfo::TYPE_VEHICLE:
                 marker.color.r = 0.0; marker.color.g = 0.0; marker.color.b = 1.0;
                 break;
             default:
@@ -115,7 +115,7 @@ void PrintVector3(const std::string& name, float x, float y, float z,
               << "\tz: " << std::fixed << std::setprecision(precision) << z << unit << "\n";
 }
 
-void OnObjectInfo(const std::vector<ObjectInfo::ObjectData>& objects)
+void OnObjectInfo(const MoraiCppUdp::ObjectInfo::ObjectsData& data)
 {
     // Clear screen for better visibility
     #ifdef _WIN32
@@ -129,11 +129,12 @@ void OnObjectInfo(const std::vector<ObjectInfo::ObjectData>& objects)
     #endif
 
     std::cout << "\n=== Object Information ===" << std::endl;
-    std::cout << "Number of objects: " << objects.size() << std::endl;
+    std::cout << "Timestamp: " << data.timestamp.sec << "." << data.timestamp.nsec << " ns" << std::endl;
+    std::cout << "Number of objects: " << data.objects.size() << std::endl;
 
-    for (size_t i = 0; i < objects.size(); ++i)
+    for (size_t i = 0; i < data.objects.size(); ++i)
     {
-        const auto& obj = objects[i];
+        const auto& obj = data.objects[i];
         if(obj.obj_id == 0)
         {
             continue;
@@ -147,7 +148,7 @@ void OnObjectInfo(const std::vector<ObjectInfo::ObjectData>& objects)
         std::cout << "Heading: " << obj.heading << " deg" << std::endl;
         PrintVector3("Size", obj.size_x, obj.size_y, obj.size_z, " m");
         
-        if (obj.obj_type == ObjectInfo::TYPE_VEHICLE) {
+        if (obj.obj_type == MoraiCppUdp::ObjectInfo::TYPE_VEHICLE) {
             std::cout << "Vehicle Specific Data:" << std::endl;
             std::cout << "\tOverhang: " << obj.overhang << " m" << std::endl;
             std::cout << "\tWheelbase: " << obj.wheelbase << " m" << std::endl;
@@ -157,7 +158,7 @@ void OnObjectInfo(const std::vector<ObjectInfo::ObjectData>& objects)
         PrintVector3("Velocity", obj.velocity_x, obj.velocity_y, obj.velocity_z, " km/h");
         PrintVector3("Acceleration", obj.accel_x, obj.accel_y, obj.accel_z, " m/s²");
 
-        if (obj.obj_type == ObjectInfo::TYPE_VEHICLE) {
+        if (obj.obj_type == MoraiCppUdp::ObjectInfo::TYPE_VEHICLE) {
             std::cout << "MGeo Link ID: " << obj.link_id << std::endl;
         }
         
@@ -165,7 +166,7 @@ void OnObjectInfo(const std::vector<ObjectInfo::ObjectData>& objects)
     }
 
     #ifndef _WIN32
-    PublishObjectMarkers(objects);
+    PublishObjectMarkers(data.objects);
     #endif
 }
 
@@ -197,7 +198,7 @@ int main(int argc, char** argv)
 
     try
     {
-        ObjectInfo object_info(ip_address, port);
+        MoraiCppUdp::ObjectInfo object_info(ip_address, port);
         std::cout << "Connecting to " << ip_address << ":" << port << std::endl;
         
         object_info.RegisterCallback(OnObjectInfo);
