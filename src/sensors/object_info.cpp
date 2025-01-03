@@ -42,10 +42,14 @@ void ObjectInfo::ThreadObjectInfoReceiver() {
             memset(&packet_data_, 0, sizeof(ObjectInfoPacketStruct));
             if (ParseObjectInfo(packet_buffer, received_size, packet_data_)) {
                 ObjectsData temp_data;
+                temp_data.objects.reserve(MAX_OBJECTS);
+                temp_data.objects.clear();
                 temp_data.timestamp.sec = packet_data_.packet.timestamp_sec;
                 temp_data.timestamp.nsec = packet_data_.packet.timestamp_nsec;
                 for (size_t i = 0; i < MAX_OBJECTS; ++i) {
-                    temp_data.objects[i] = packet_data_.packet.objects[i];
+                    if(packet_data_.packet.objects[i].obj_id == 0)
+                        break;
+                    temp_data.objects.push_back(packet_data_.packet.objects[i]);
                 }
 
                 std::lock_guard<std::mutex> lock(callback_mutex_);
