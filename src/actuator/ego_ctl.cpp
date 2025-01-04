@@ -53,7 +53,7 @@ bool EgoControl::PackControlCommand(const ControlCommand& command, uint8_t* buff
     buffer[13] = '$';
 
     // Data Length (4 bytes) - length of remaining data
-    uint32_t data_length = 35;  // 12(Aux) + 3(Control) + 20(Data)
+    uint32_t data_length = 23;  // 12(Aux) + 3(Control) + 20(Data)
     std::memcpy(&buffer[14], &data_length, sizeof(uint32_t));
 
     // Aux Data (12 bytes) - Reserved for future use
