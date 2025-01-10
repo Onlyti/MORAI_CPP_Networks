@@ -254,11 +254,22 @@ endif()
 # Ego Control Example
 add_executable(ego_control_example
     examples/example_ego_control.cpp
-    src/actuator/ego_ctl.cpp
 )
 
 target_link_libraries(ego_control_example
     ${PROJECT_NAME}_network
+    ${PROJECT_NAME}_actuator
+    ${PLATFORM_LIBS}
+)
+
+# Multi Ego Setting Example
+add_executable(multi_ego_setting_example
+    examples/example_multi_ego_setting.cpp
+)
+
+target_link_libraries(multi_ego_setting_example
+    ${PROJECT_NAME}_network
+    ${PROJECT_NAME}_simulator
     ${PLATFORM_LIBS}
 )
 
