@@ -1,10 +1,10 @@
 #include "simulator/multi_ego_setting.hpp"
 
-namespace MoraiCppUdp {
+using namespace MoraiCppUdp;
 
 MultiEgoSetting::MultiEgoSetting(const std::string& ip, int port) : UDPSender(ip, port) {}
 
-MultiEgoSettingPacket MultiEgoSetting::CreatePacket(int32_t num_of_ego, int32_t camera_index,
+MultiEgoSetting::MultiEgoSettingPacket MultiEgoSetting::CreatePacket(int32_t num_of_ego, int32_t camera_index,
                                                     const std::vector<EgoState>& ego_states) {
     if (ego_states.size() > 20) {
         std::cerr << "Warning: Too many ego states provided (" << ego_states.size() << "). Only first 20 will be used."
@@ -86,5 +86,3 @@ bool MultiEgoSetting::SendMultiEgoSetting(const MultiEgoSettingPacket& packet) {
     // 데이터 전송
     return Send(buffer, 683);
 }
-
-} // namespace MoraiCppUdp
