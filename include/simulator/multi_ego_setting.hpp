@@ -13,6 +13,7 @@
 
 namespace MoraiCppUdp {
 class MultiEgoSetting : public UDPSender {
+public:
 #pragma pack(push, 1) // 1바이트 정렬 시작
 
     // 차량의 상태를 나타내는 구조체 (32 bytes)
