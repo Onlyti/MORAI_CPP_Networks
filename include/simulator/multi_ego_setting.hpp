@@ -25,8 +25,8 @@ struct EgoState {
     float g_pitch;     // 차량의 rotation (deg)
     float g_yaw;       // 차량의 rotation (deg)
     float speed;       // 차량의 속력 (km/h)
-    uint8_t gear;      // 기어모드 변경
-    uint8_t ctrl_mode; // 제어하는 방식
+    uint8_t gear;      // 기어모드 변경 [1: Parking, 2: Rear, 3: Neutral, 4: Drive]
+    uint8_t ctrl_mode; // 제어하는 방식 [1: Keyboard, 2: AutoMode]
 };
 
 // 전체 패킷 구조체
@@ -51,7 +51,7 @@ public:
     ~MultiEgoSetting() = default;
 
     // 패킷 전송
-    bool SendData(const MultiEgoSettingPacket& packet);
+    bool SendMultiEgoSetting(const MultiEgoSettingPacket& packet);
 
     // 패킷 생성 헬퍼 함수
     static MultiEgoSettingPacket CreatePacket(int32_t num_of_ego, int32_t camera_index,
