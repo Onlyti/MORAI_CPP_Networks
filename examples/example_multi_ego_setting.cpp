@@ -15,8 +15,8 @@ int main(int argc, char* argv[]) {
 
     MoraiCppUdp::MultiEgoSetting multi_ego_setting(ip_address, port);
 
-    std::vector<MoraiCppUdp::EgoState> ego_states;
-    MoraiCppUdp::EgoState ego_state;
+    std::vector<MoraiCppUdp::MultiEgoSetting::EgoState> ego_states;
+    MoraiCppUdp::MultiEgoSetting::EgoState ego_state;
     ego_state.ego_index = 0;
     ego_state.g_pos_x = 0.0;
     ego_state.g_pos_y = 0.0;
@@ -29,7 +29,7 @@ int main(int argc, char* argv[]) {
     ego_state.ctrl_mode = 1;
     ego_states.push_back(ego_state);
 
-    MoraiCppUdp::MultiEgoSettingPacket packet = multi_ego_setting.CreatePacket(2, 1, ego_states);
+    MoraiCppUdp::MultiEgoSetting::MultiEgoSettingPacket packet = multi_ego_setting.CreatePacket(2, 1, ego_states);
 
     std::cout << "Sending Multi Ego Setting Packet..." << std::endl;
     std::cout << "\t position: " << packet.ego_states[0].g_pos_x << ", " << packet.ego_states[0].g_pos_y << ", " << packet.ego_states[0].g_pos_z << std::endl;
