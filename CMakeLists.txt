@@ -365,6 +365,7 @@ install(TARGETS ${PROJECT_NAME}_network ${PROJECT_NAME}_sensor
 # Actuator library sources
 add_library(${PROJECT_NAME}_actuator
     src/actuator/ego_ctl.cpp
+    src/actuator/turn_signal_lamp_control.cpp
 )
 
 # 액추에이터 라이브러리에 대한 export 설정 추가
