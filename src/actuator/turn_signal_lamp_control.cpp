@@ -45,7 +45,7 @@ bool TurnSignalLampControl::PackLampCommand(const LampCommand& command, uint8_t*
     buffer[12] = '$';
 
     // Data Length (4 bytes) - length of remaining data
-    uint32_t data_length = 14; // 12(Aux) + 2(Lamp Data)
+    uint32_t data_length = 2; // 12(Aux) + 2(Lamp Data)
     std::memcpy(&buffer[13], &data_length, sizeof(uint32_t));
 
     // Aux Data (12 bytes) - Reserved for future use
