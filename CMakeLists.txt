@@ -262,6 +262,17 @@ target_link_libraries(ego_control_example
     ${PLATFORM_LIBS}
 )
 
+# Turn Signal Lamp Control Example
+add_executable(turn_signal_lamp_control_example
+    examples/example_turn_signal_lamp_control.cpp
+)
+
+target_link_libraries(turn_signal_lamp_control_example
+    ${PROJECT_NAME}_network
+    ${PROJECT_NAME}_actuator
+    ${PLATFORM_LIBS}
+)
+
 # Multi Ego Setting Example
 add_executable(multi_ego_setting_example
     examples/example_multi_ego_setting.cpp
