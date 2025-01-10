@@ -46,7 +46,7 @@ MultiEgoSettingPacket MultiEgoSetting::CreatePacket(int32_t num_of_ego, int32_t 
     return packet;
 }
 
-bool MultiEgoSetting::SendData(const MultiEgoSettingPacket& packet) {
+bool MultiEgoSetting::SendMultiEgoSetting(const MultiEgoSettingPacket& packet) {
     // 패킷을 바이트 배열로 변환
     char buffer[683]; // 전체 패킷 크기
     char* ptr = buffer;
@@ -78,8 +78,10 @@ bool MultiEgoSetting::SendData(const MultiEgoSettingPacket& packet) {
     }
 
     // 테일 복사
-    *ptr++ = packet.tail01;
-    *ptr = packet.tail02;
+    std::memcpy(ptr, &packet.tail01, sizeof(uint8_t));
+    ptr += sizeof(uint8_t);
+    std::memcpy(ptr, &packet.tail02, sizeof(uint8_t));
+    ptr += sizeof(uint8_t);
 
     // 데이터 전송
     return Send(buffer, 683);
