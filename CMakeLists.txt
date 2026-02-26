@@ -72,6 +72,8 @@ add_library(${PROJECT_NAME}_sensor
     src/sensors/object_info.cpp
     src/sensors/traffic_light.cpp
     src/sensors/vehicle_state.cpp
+
+    src/sensors/camera2.cpp
 )
 
 # 센서 라이브러리에 대한 export 설정 추가
