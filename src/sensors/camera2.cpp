@@ -1,5 +1,7 @@
 #include "sensors/camera2.hpp"
 
+#include <algorithm>
+#include <cstring>
 #include <iostream>
 
 using namespace MoraiCppUdp;
@@ -76,7 +78,7 @@ bool Camera2::ParseCameraData(const char* buffer, size_t received_size, CameraDa
     // Case 1) single packet format: [size(int32_t)] + [jpeg bytes]
     int32_t single_size = 0;
     if (received_size >= kSingleHeaderSize) {
-        std::memcpy(&single_size, buffer, kSingleHeaderSize);
+        memcpy(&single_size, buffer, kSingleHeaderSize);
     }
     const bool looks_single = (single_size > 0 &&
                                received_size == 2 * (kSingleHeaderSize + static_cast<size_t>(single_size)));
@@ -114,9 +116,9 @@ bool Camera2::ParseCameraData(const char* buffer, size_t received_size, CameraDa
     int32_t seq = 0;
     uint16_t chunk_no = 0;
     uint16_t total_chunks = 0;
-    std::memcpy(&seq, buffer, sizeof(int32_t));
-    std::memcpy(&chunk_no, buffer + sizeof(int32_t), sizeof(uint16_t));
-    std::memcpy(&total_chunks, buffer + sizeof(int32_t) + sizeof(uint16_t), sizeof(uint16_t));
+    memcpy(&seq, buffer, sizeof(int32_t));
+    memcpy(&chunk_no, buffer + sizeof(int32_t), sizeof(uint16_t));
+    memcpy(&total_chunks, buffer + sizeof(int32_t) + sizeof(uint16_t), sizeof(uint16_t));
 
     if (total_chunks == 0 || chunk_no >= total_chunks) {
         std::cerr << "Invalid fragmented packet header. seq=" << seq
@@ -135,7 +137,7 @@ bool Camera2::ParseCameraData(const char* buffer, size_t received_size, CameraDa
             return false;
         }
         int32_t image_length = 0;
-        std::memcpy(&image_length, buffer + kFragBaseHeaderSize, sizeof(int32_t));
+        memcpy(&image_length, buffer + kFragBaseHeaderSize, sizeof(int32_t));
         if (image_length <= 0) {
             std::cerr << "Invalid image length in first fragmented packet. seq=" << seq
                       << ", image_length=" << image_length << std::endl;
@@ -166,9 +168,9 @@ bool Camera2::ParseCameraData(const char* buffer, size_t received_size, CameraDa
         assembling_last_chunk_no_ = 0;
         assembling_expected_image_size_ = first_chunk_expected_image_size;
     } else if (!has_assembling_seq_ || assembling_seq_ != seq || assembling_total_chunks_ != total_chunks) {
-        std::cerr << "Fragment sequence mismatch. seq=" << seq
-                  << ", chunk_no=" << chunk_no
-                  << ", total_chunks=" << total_chunks << std::endl;
+        // std::cerr << "Fragment sequence mismatch. seq=" << seq
+        //           << ", chunk_no=" << chunk_no
+        //           << ", total_chunks=" << total_chunks << std::endl;
         reset_assembly();
         return false;
     }
@@ -183,8 +185,30 @@ bool Camera2::ParseCameraData(const char* buffer, size_t received_size, CameraDa
             return false;
         }
     }
+    if (assembling_expected_image_size_ == 0) {
+        std::cerr << "Missing expected image size in fragmented stream. seq=" << seq << std::endl;
+        reset_assembly();
+        return false;
+    }
 
-    assembling_image_data_.insert(assembling_image_data_.end(), payload_ptr, payload_ptr + payload_size);
+    const size_t current_size = assembling_image_data_.size();
+    if (current_size > assembling_expected_image_size_) {
+        std::cerr << "Assembled data already exceeded expected size. seq=" << seq
+                  << ", expected=" << assembling_expected_image_size_
+                  << ", current=" << current_size << std::endl;
+        reset_assembly();
+        return false;
+    }
+
+    const size_t remaining_size = assembling_expected_image_size_ - current_size;
+    const size_t copy_size = std::min(payload_size, remaining_size);
+    assembling_image_data_.insert(assembling_image_data_.end(), payload_ptr, payload_ptr + copy_size);
+
+    if (copy_size < payload_size) {
+        // std::cerr << "Ignoring trailing bytes in fragmented packet. seq=" << seq
+        //           << ", chunk_no=" << chunk_no
+        //           << ", ignored=" << (payload_size - copy_size) << std::endl;
+    }
     assembling_last_chunk_no_ = chunk_no;
 
     if (chunk_no != static_cast<uint16_t>(total_chunks - 1)) {
