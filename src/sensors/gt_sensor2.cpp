@@ -88,7 +88,7 @@
      if (size < offset + objects_required_size) {
          return false;
      }
-     offset += 32; // Why 32? I don't know. But it works.
+    //  offset += 32; // Why 32? I don't know. But it works.
  
      for (size_t i = 0; i < data.num_objects; ++i) {
          const size_t object_base = offset + (i * sizeof(ObjectData));
